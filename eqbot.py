@@ -29,7 +29,7 @@ def hyphen(e, bot):
 b.addRegexHook("\w-(ass|flank) \w", hyphen)
 
 def search(e, bot):
-    tracks = eqbeats.search(e.msg[1:])
+    tracks = eqbeats.search(e.msg[1:])[:5]
     for t in tracks:
         bot.reply(e, eqbeats.ppTrack(t))
     if len(tracks) == 0:

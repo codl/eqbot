@@ -8,7 +8,7 @@ def ppTrack(t):
 lastTrack = None
 def newTracks():
     global lastTrack
-    page = ur.urlopen("http://eqbeats/tracks/latest/json")
+    page = ur.urlopen("http://eqbeats.org/tracks/latest/json")
     tracks = json.loads(page.read().decode("UTF-8"))['tracks']
     newTracks = []
     if not lastTrack:

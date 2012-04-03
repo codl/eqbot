@@ -39,14 +39,12 @@ class Bot:
     def runCommandHooks(self, e):
         if e.type == irc.PRIVMSG:
             try:
-                self.commandHooks[e.msg.split(" ")[0]](e, self)
-                print(e.msg.split(" ")[0])
+                threading.Thread(target=self.commandHooks[e.msg.split(" ")[0]], args=(e, self)).start()
             except KeyError:
                 pass
         elif e.type == irc.CHANMSG and e.msg[0] == self.prefix:
             try:
-                self.commandHooks[e.msg.split(" ")[0][1:]](e, self)
-                print(e.msg.split(" ")[0][1:])
+                threading.Thread(target=self.commandHooks[e.msg.split(" ")[0][1:]], args=(e, self)).start()
             except KeyError:
                 pass
 
@@ -54,7 +52,7 @@ class Bot:
         if e.type == irc.PRIVMSG or e.type == irc.CHANMSG:
             for hook in self.regexHooks:
                 if hook[0].search(e.msg):
-                    hook[1](e, self)
+                    threading.Thread(target=hook[1], args=(e, self)).start()
 
     def runTimeHooks(self):
         for i, hook in enumerate(self.timeHooks):
