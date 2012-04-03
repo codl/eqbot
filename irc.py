@@ -44,11 +44,11 @@ class Event:
     def __init__(self, type, source=None, msg=None, channel=None, irc=None):
         self.type = type
         self.source = source
-        self.sourcenick = source.partition("!")[0] if source else None
+        self.sourceNick = source.partition("!")[0] if source else None
         self.msg = msg
         self.channel = channel
         self.irc = irc
-        self.time = time.gmtime()
+        self.time = time.time()
 
 class Irc:
     def __repr__(self):
@@ -59,9 +59,9 @@ class Irc:
         self.port = port
         self.socket = None
         self.status = DISCONNECTED
-        self.nick = "NamelessBot"
-        self.username = "namelessbot"
-        self.realname = "Nameless bot"
+        self.nick = "Nameless"
+        self.username = "nameless"
+        self.realname = "Nameless"
         self._inbuf = bytearray()
 
     def _send(self, data):
@@ -71,12 +71,12 @@ class Irc:
 
     def _recv(self, timeout = None):
         self.socket.settimeout(timeout)
-        while self._inbuf.find(b'\r') == -1:
+        while self._inbuf.find(b'\n') == -1:
             try:
-                self._inbuf += self.socket.recv(4096)
+                self._inbuf += self.socket.recv(1024)
             except socket.timeout:
                 return None
-        command = self._inbuf.partition(b'\r')[0].decode("UTF-8")
+        command = self._inbuf.partition(b'\n')[0].decode("UTF-8")
         self._inbuf = self._inbuf.partition(b'\n')[2]
         print("IN  " + command)
         return command
@@ -92,9 +92,9 @@ class Irc:
             args = data.split(" ")
             if args[1] == "PRIVMSG":
                 if args[2] == self.nick:
-                    return Event(PRIVMSG, args[0][1:], " ".join(args[3:]), irc=self)
+                    return Event(PRIVMSG, args[0][1:], " ".join(args[3:])[1:-1], irc=self)
                 else:
-                    return Event(CHANMSG, args[0][1:], " ".join(args[3:])[1:], args[2], irc=self)
+                    return Event(CHANMSG, args[0][1:], " ".join(args[3:])[1:-1], args[2], irc=self)
             elif args[1] == "NICK":
                 return Event(NICKCHANGE, args[0][1:], args[2], irc=self)
             #TODO parse more events
@@ -119,7 +119,7 @@ class Irc:
             raise CantConnectError
         self.setNick(self.nick)
         self._send("USER " + self.username + " _ _ " + self.realname);
-        return self.socket
+        return self._recv()
 
     def setNick(self, nick):
         if not isinstance(nick, str): raise IncorrectNickError
