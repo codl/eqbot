@@ -65,9 +65,10 @@ class Irc:
         self._inbuf = bytearray()
 
     def _send(self, data):
-        if data[-1] != "\n": data += "\n"
-        print("OUT " + data[:-1])
-        self.socket.send(bytes(data, "UTF-8"))
+        if isinstance(data, str): data = data.encode("utf_8")
+        if data[-1] != b'\n': data += b'\n'
+        self.socket.send(data)
+        print("OUT " + str(data, "utf_8")[:-1])
 
     def _recv(self, timeout = None):
         self.socket.settimeout(timeout)
@@ -76,7 +77,13 @@ class Irc:
                 self._inbuf += self.socket.recv(1024)
             except socket.timeout:
                 return None
-        command = self._inbuf.partition(b'\n')[0].decode("UTF-8")
+        command = ""
+        for enc in ("utf_8", "latin_1"):
+            try:
+                command = self._inbuf.partition(b'\n')[0].decode(enc)
+                break
+            except UnicodeDecodeError: pass
+
         self._inbuf = self._inbuf.partition(b'\n')[2]
         print("IN  " + command)
         return command
@@ -104,7 +111,11 @@ class Irc:
         self._send("JOIN " + chan)
 
     def sendMsg(self, msg, dest):
-        self._send("PRIVMSG " + dest + " :" + msg) # same syntax for channels and users, yay :D
+        if(isinstance(msg, str)):
+            msg = msg.encode("UTF-8")
+        if(isinstance(dest, str)):
+            dest = dest.encode("UTF-8")
+        self._send(b"PRIVMSG " + dest + b" :" + msg) # same syntax for channels and users, yay :D
 
 
     def connect(self):

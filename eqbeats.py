@@ -3,7 +3,7 @@ import urllib.request as ur
 import urllib.parse as up
 
 def ppTrack(t):
-    return t['title'] + " by " + t['artist']['name'] + " (http://eqbeats.org/tracks/" + str(t['id']) + ")"
+    return t['title'] + " by " + t['artist']['name'] + " (http://eqbeats.org/track/" + str(t['id']) + ")"
 
 lastTrack = None
 def newTracks():

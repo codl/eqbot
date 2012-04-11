@@ -18,10 +18,11 @@ class Bot:
         self.prefix = "!"
 
     def reply(self, e, msg, hilight=True):
+        if(isinstance(msg, str)): msg = msg.encode("utf_8")
         dest = e.sourceNick
         if e.type == irc.CHANMSG:
             if hilight:
-                msg = e.sourceNick + ": " + msg
+                msg = e.sourceNick.encode("utf_8") + b": " + msg
             dest = e.channel
         self.sendMsg(msg, dest)
 
@@ -29,17 +30,21 @@ class Bot:
         self.msgQueue += [(msg, dest)];
 
     def processQueue(self):
+        delay = 0
         while True:
             try:
-                msg = self.msgQueue.pop()
+                msg = self.msgQueue.pop(0)
                 self.irc.sendMsg(*msg)
+                time.sleep(delay)
+                delay += 0.1
             except IndexError:
                 time.sleep(0.1)
+                delay = 0
 
     def runCommandHooks(self, e):
         if e.type == irc.PRIVMSG:
             try:
-                threading.Thread(target=self.commandHooks[e.msg.split(" ")[0]], args=(e, self)).start()
+                threading.Thread(target=self.commandHooks[e.msg.lower().lstrip(self.prefix).split(" ")[0]], args=(e, self)).start()
             except KeyError:
                 pass
         elif e.type == irc.CHANMSG and e.msg[0] == self.prefix:
