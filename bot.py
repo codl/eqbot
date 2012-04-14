@@ -15,12 +15,20 @@ class Bot:
         self.commandHooks = {}
         self.regexHooks = []
         self.timeHooks = []
+        self.wildHooks = []
         self.prefix = "!"
+
+    def react(self, e, act):
+        msg = irc.action(act)
+        dest = e.sourceNick
+        if e.channel:
+            dest = e.channel
+        self.sendMsg(msg, dest)
 
     def reply(self, e, msg, hilight=True):
         if(isinstance(msg, str)): msg = msg.encode("utf_8")
         dest = e.sourceNick
-        if e.type == irc.CHANMSG:
+        if e.channel:
             if hilight:
                 msg = e.sourceNick.encode("utf_8") + b": " + msg
             dest = e.channel
@@ -41,6 +49,10 @@ class Bot:
                 time.sleep(0.1)
                 delay = 0
 
+    def runWildHooks(self, e):
+        for hook in self.wildHooks:
+            threading.Thread(target=hook, args=(e, self)).start()
+
     def runCommandHooks(self, e):
         if e.type == irc.PRIVMSG:
             try:
@@ -56,19 +68,24 @@ class Bot:
     def runRegexHooks(self, e):
         if e.type == irc.PRIVMSG or e.type == irc.CHANMSG:
             for hook in self.regexHooks:
-                if hook[0].search(e.msg):
+                match = hook[0].search(e.msg)
+                if match:
+                    e.match = match.group()
                     threading.Thread(target=hook[1], args=(e, self)).start()
 
     def runTimeHooks(self):
         for i, hook in enumerate(self.timeHooks):
             if hook[0] < time.time():
                 self.timeHooks[i][0] = time.time() + hook[1](self)
+
     def addCommandHook(self, command, f):
         self.commandHooks.update({command: f})
     def addRegexHook(self, regex, f):
         self.regexHooks += [(re.compile(regex, re.I), f)]
     def addTimeHook(self, delay, f):
         self.timeHooks += [[time.time() + delay, f]]
+    def addWildHook(self, f):
+        self.wildHooks += [f,]
 
 
     def run(self):
@@ -78,4 +95,5 @@ class Bot:
             if e:
                 self.runCommandHooks(e)
                 self.runRegexHooks(e)
+                self.runWildHooks(e)
             self.runTimeHooks()

@@ -27,6 +27,10 @@ OTHER = 0
 ERR_ERRONEOUSNICK = 432
 ERR_NICKALREADYINUSE = 433
 
+def action(msg):
+    if(isinstance(msg, str)):
+        msg = msg.encode("UTF-8")
+    return b"\1ACTION " + msg + b"\1"
 
 class Error(Exception):
     def __repr__(self): return "<IRC Error>"
@@ -99,16 +103,34 @@ class Irc:
             args = data.split(" ")
             if args[1] == "PRIVMSG":
                 if args[2] == self.nick:
-                    return Event(PRIVMSG, args[0][1:], " ".join(args[3:])[1:-1], irc=self)
+                    if args[3] == ":\x01ACTION":
+                        args[-1] = args[-1][:-2] # remove \1\r
+                        return Event(PRIVACTION, args[0][1:], " ".join(args[4:]))
+                    else:
+                        return Event(PRIVMSG, args[0][1:], " ".join(args[3:])[1:-1], irc=self)
                 else:
-                    return Event(CHANMSG, args[0][1:], " ".join(args[3:])[1:-1], args[2], irc=self)
+                    if args[3] == ":\1ACTION":
+                        args[-1] = args[-1][:-2] # remove \1\r
+                        return Event(ACTION, args[0][1:], " ".join(args[4:]), channel=args[2])
+                    else:
+                        return Event(CHANMSG, args[0][1:], " ".join(args[3:])[1:-1], args[2], irc=self)
             elif args[1] == "NICK":
                 return Event(NICKCHANGE, args[0][1:], args[2], irc=self)
+            elif args[1] == "JOIN":
+                return Event(JOIN, args[0][1:], channel=args[2][1:-1])
+            elif args[1] == "PART":
+                return Event(PART, args[0][1:], channel=args[2][:-1])
+            elif args[1] == "QUIT":
+                return Event(QUIT, args[0][1:], msg=args[2][:-1])
             #TODO parse more events
-            else: return Event(OTHER, irc=self)
+            else:
+                return Event(OTHER, irc=self)
 
     def join(self, chan):
         self._send("JOIN " + chan)
+
+    def kick(self, chan, nick, reason=None):
+        self._send("KICK " + chan + " " + nick + (" :"+reason if reason else ""))
 
     def sendMsg(self, msg, dest):
         if(isinstance(msg, str)):
