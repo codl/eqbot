@@ -23,7 +23,7 @@ class Bot:
         dest = e.sourceNick
         if e.channel:
             dest = e.channel
-        self.sendMsg(msg, dest)
+        self.sendMsg(dest, msg)
 
     def reply(self, e, msg, hilight=True):
         if(isinstance(msg, str)): msg = msg.encode("utf_8")
@@ -32,10 +32,10 @@ class Bot:
             if hilight:
                 msg = e.sourceNick.encode("utf_8") + b": " + msg
             dest = e.channel
-        self.sendMsg(msg, dest)
+        self.sendMsg(dest, msg)
 
-    def sendMsg(self, msg, dest):
-        self.msgQueue += [(msg, dest)];
+    def sendMsg(self, dest, msg):
+        self.msgQueue += [(dest, msg)];
 
     def processQueue(self):
         delay = 0
@@ -54,19 +54,19 @@ class Bot:
             threading.Thread(target=hook, args=(e, self)).start()
 
     def runCommandHooks(self, e):
-        if e.type == irc.PRIVMSG:
+        if e.type == irc.MSG and not e.channel:
             try:
                 threading.Thread(target=self.commandHooks[e.msg.lower().lstrip(self.prefix).split(" ")[0]], args=(e, self)).start()
             except KeyError:
                 pass
-        elif e.type == irc.CHANMSG and e.msg[0] == self.prefix:
+        elif e.type == irc.MSG and e.msg[0] == self.prefix:
             try:
                 threading.Thread(target=self.commandHooks[e.msg.split(" ")[0][1:]], args=(e, self)).start()
             except KeyError:
                 pass
 
     def runRegexHooks(self, e):
-        if e.type == irc.PRIVMSG or e.type == irc.CHANMSG:
+        if e.type == irc.MSG:
             for hook in self.regexHooks:
                 match = hook[0].search(e.msg)
                 if match:

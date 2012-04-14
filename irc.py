@@ -11,10 +11,8 @@ CONNECTED = 2
 
 # event type constants
 PING = 1
-CHANMSG = 2
-PRIVMSG = 3
+MSG = 2
 ACTION = 4
-PRIVACTION = 11
 NICKCHANGE = 5
 MODECHANGE = 6
 KICK = 7
@@ -105,15 +103,15 @@ class Irc:
                 if args[2] == self.nick:
                     if args[3] == ":\x01ACTION":
                         args[-1] = args[-1][:-2] # remove \1\r
-                        return Event(PRIVACTION, args[0][1:], " ".join(args[4:]))
+                        return Event(ACTION, args[0][1:], " ".join(args[4:]))
                     else:
-                        return Event(PRIVMSG, args[0][1:], " ".join(args[3:])[1:-1], irc=self)
+                        return Event(MSG, args[0][1:], " ".join(args[3:])[1:-1], irc=self)
                 else:
                     if args[3] == ":\1ACTION":
                         args[-1] = args[-1][:-2] # remove \1\r
                         return Event(ACTION, args[0][1:], " ".join(args[4:]), channel=args[2])
                     else:
-                        return Event(CHANMSG, args[0][1:], " ".join(args[3:])[1:-1], args[2], irc=self)
+                        return Event(MSG, args[0][1:], " ".join(args[3:])[1:-1], args[2], irc=self)
             elif args[1] == "NICK":
                 return Event(NICKCHANGE, args[0][1:], args[2], irc=self)
             elif args[1] == "JOIN":
@@ -132,7 +130,7 @@ class Irc:
     def kick(self, chan, nick, reason=None):
         self._send("KICK " + chan + " " + nick + (" :"+reason if reason else ""))
 
-    def sendMsg(self, msg, dest):
+    def sendMsg(self, dest, msg):
         if(isinstance(msg, str)):
             msg = msg.encode("UTF-8")
         if(isinstance(dest, str)):

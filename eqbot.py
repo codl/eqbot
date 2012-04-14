@@ -9,6 +9,7 @@ import re
 import urllib.request as ur
 from html.parser import HTMLParser
 import sys
+import sqlite3
 
 i = irc.Irc("irc.ponychat.net")
 i.setNick("EqBot_")
@@ -74,12 +75,12 @@ b.addCommandHook("choose", choice)
 
 def newTracks(bot):
     for t in eqbeats.newTracks():
-        bot.sendMsg("New track : " + eqbeats.ppTrack(t), "#eqbeats")
+        bot.sendMsg("#eqbeats", "New track : " + eqbeats.ppTrack(t))
     return 120
 b.addTimeHook(120, newTracks)
 
 def once(bot):
-    bot.sendMsg(random.choice(("untz", "once")), "#eqbeats")
+    bot.sendMsg("#eqbeats", random.choice(("untz", "once")))
     return random.randint(60, 86400)
 b.addTimeHook(random.randint(60, 86400), once)
 
@@ -124,12 +125,12 @@ def louder_(e, bot):
 b.addCommandHook("louder!", louder_)
 
 def kindness(e, bot):
-    if(e.type in (irc.ACTION, irc.PRIVACTION) and re.search("(hugs|snuggles|pets|brohoofs) " + i.nick, e.msg, re.I)):
+    if(e.type == irc.ACTION and re.search("(hugs|snuggles|pets|brohoofs) " + i.nick, e.msg, re.I)):
         bot.reply(e, "<3")
 b.addWildHook(kindness)
 
 def violence(e, bot): # never the answer
-    if(e.type in (irc.ACTION, irc.PRIVACTION) and re.search("(hits|kicks|slaps|punches|crushes|maims|harms|shoots|stabs) " + i.nick, e.msg, re.I)):
+    if(e.type == irc.ACTION and re.search("(hits|kicks|slaps|punches|crushes|maims|harms|shoots|stabs) " + i.nick, e.msg, re.I)):
         if e.channel and random.random() < 0.05:
             i.kick(e.channel, e.sourceNick, "You thought you could abuse old EqBot, that pushover. Well, new EqBot is not going to have any of that!")
         else:
@@ -177,9 +178,45 @@ def url(e, bot):
         bot.reply(e, title + " posted by " + e.sourceNick, hilight=False)
 b.addRegexHook("https?://[^ ].*[^) ]", url)
 
+def getdb():
+    return sqlite3.connect("db")
+
+def checkMail(e, bot):
+    if e.type == irc.MSG:
+        db = getdb()
+        c = db.cursor()
+        c.execute("SELECT source, msg, private FROM mail WHERE dest = ?", (e.sourceNick,))
+        messages = c.fetchall()
+        c.execute("DELETE FROM mail WHERE dest = ?", (e.sourceNick,))
+        db.commit()
+        for m in messages:
+            msg = "Mail from " + m[0] + ": " + m[1]
+            if m[2]:
+                bot.sendMsg(e.sourceNick, msg)
+            else:
+                bot.reply(e, msg)
+b.addWildHook(checkMail)
+
+def mail(e, bot):
+    db = getdb()
+    c = db.cursor()
+    args = e.msg.split()
+    if len(args) < 3:
+        bot.reply(e, "Syntax : !mail nick message")
+        return
+    nick = args[1]
+    msg = " ".join(args[2:])
+    private = (e.channel == None)
+    c.execute("INSERT INTO mail (source, dest, private, msg) VALUES (?, ?, ?, ?)", (e.sourceNick, nick, private, msg))
+    db.commit()
+    bot.reply(e, "Message stored!")
+b.addCommandHook("mail", mail)
+b.addCommandHook("msg", mail)
+b.addCommandHook("m", mail)
+
 if len(sys.argv) > 1 and sys.argv[1] == "live":
     time.sleep(2)
-    i.sendMsg("IDENTIFY FnkrfBPo9f-X", "NickServ")
+    i.sendMsg("NickServ", "IDENTIFY FnkrfBPo9f-X")
     i.join("#eqbeats")
 elif len(sys.argv) > 1:
     time.sleep(2)
