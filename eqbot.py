@@ -21,12 +21,12 @@ i.connect()
 b = bot.Bot(i)
 
 def fetchTitle(url):
-    page = ur.urlopen(url)
+    page = ur.urlopen(ur.Request(url, headers={'User-Agent': "Mozilla/5.0"}))
     enc = page.info().get("Content-Type").partition("=")[2]
     if enc == "": enc = "utf-8"
-    print(enc)
     try:
-        return HTMLParser.unescape(HTMLParser, re.search("<title>(.*)</title>", page.read().decode(enc), re.I).expand("\\1"))
+        return re.search("<title>(.*)</title>", page.read().decode(enc).translate(str.maketrans("","","\n\r\t")), flags = re.I | re.M).expand("\\1")
+        #return HTMLParser.unescape(HTMLParser, re.search("<title>(.*)</title>", page.read().decode(enc), re.I).expand("\\1"))
     except AttributeError:
         return None
 
@@ -175,7 +175,7 @@ b.addCommandHook("rfc", rfc)
 def url(e, bot):
     title = fetchTitle(e.match)
     if title:
-        bot.reply(e, title + " posted by " + e.sourceNick, hilight=False)
+        bot.reply(e, b"\02" + title.encode("utf_8") + b"\2 posted by " + e.sourceNick.encode("utf_8"), hilight=False)
 b.addRegexHook("https?://[^ ].*[^) ]", url)
 
 def getdb():
