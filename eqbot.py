@@ -25,7 +25,7 @@ def fetchTitle(url):
     enc = page.info().get("Content-Type").partition("=")[2]
     if enc == "": enc = "utf-8"
     try:
-        return re.search("<title>(.*)</title>", page.read().decode(enc).translate(str.maketrans("","","\n\r\t")), flags = re.I | re.M).expand("\\1").strip()
+        return " ".join(HTMLParser.unescape(HTMLParser, re.search("<title>(.*)</title>", page.read().decode(enc).translate(str.maketrans("","","\n\r\t")), flags = re.I | re.M).expand("\\1")).split())
         #return HTMLParser.unescape(HTMLParser, re.search("<title>(.*)</title>", page.read().decode(enc), re.I).expand("\\1"))
     except AttributeError:
         return None

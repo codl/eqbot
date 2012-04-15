@@ -9,7 +9,7 @@ lastTrack = None
 def newTracks():
     global lastTrack
     page = ur.urlopen("http://eqbeats.org/tracks/latest/json")
-    tracks = json.loads(page.read().decode("UTF-8"))['tracks']
+    tracks = json.loads(page.read().decode("UTF-8"))
     newTracks = []
     if not lastTrack:
         lastTrack = tracks[0]['id']
@@ -25,5 +25,5 @@ def newTracks():
 
 def search(q):
     page = ur.urlopen("http://eqbeats.org/tracks/search/json?%s" % up.urlencode({'q': q}))
-    tracks = json.loads(page.read().decode("UTF-8"))['tracks']
+    tracks = json.loads(page.read().decode("UTF-8"))
     return tracks
