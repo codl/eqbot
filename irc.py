@@ -13,17 +13,20 @@ CONNECTED = 2
 PING = 1
 MSG = 2
 ACTION = 4
-NICKCHANGE = 5
+NICK= 5
 MODECHANGE = 6
 KICK = 7
 JOIN = 8
 PART = 9
 QUIT = 10
+NOTICE = 11
+ERROR = 12
 OTHER = 0
 
 # errors
 ERR_ERRONEOUSNICK = 432
 ERR_NICKALREADYINUSE = 433
+ERR_CANNOTJOIN = 474 # is it only for bans?
 
 def action(msg):
     if(isinstance(msg, str)):
@@ -46,7 +49,9 @@ class Event:
     def __init__(self, type, source=None, msg=None, channel=None, irc=None):
         self.type = type
         self.source = source
-        self.sourceNick = source.partition("!")[0] if source else None
+        self.nick = source.partition("!")[0] if source else None
+        self.sourceNick = self.nick
+        self.host = source.partition("@")[2] if source else None
         self.msg = msg
         self.channel = channel
         self.irc = irc
@@ -101,31 +106,39 @@ class Irc:
             args = data.split(" ")
             if args[1] == "PRIVMSG":
                 if args[2] == self.nick:
-                    if args[3] == ":\x01ACTION":
+                    if args[3] == ":\1ACTION":
                         args[-1] = args[-1][:-2] # remove \1\r
-                        return Event(ACTION, args[0][1:], " ".join(args[4:]))
+                        return Event(ACTION, args[0][1:], " ".join(args[4:]), irc=self)
                     else:
                         return Event(MSG, args[0][1:], " ".join(args[3:])[1:-1], irc=self)
                 else:
                     if args[3] == ":\1ACTION":
                         args[-1] = args[-1][:-2] # remove \1\r
-                        return Event(ACTION, args[0][1:], " ".join(args[4:]), channel=args[2])
+                        return Event(ACTION, args[0][1:], " ".join(args[4:]), channel=args[2], irc=self)
                     else:
                         return Event(MSG, args[0][1:], " ".join(args[3:])[1:-1], args[2], irc=self)
             elif args[1] == "NICK":
-                return Event(NICKCHANGE, args[0][1:], args[2], irc=self)
+                return Event(NICK, args[2][1:-1] + "!" + args[0].partition("!")[2], msg=args[0][1:].partition("!")[0], irc=self)
             elif args[1] == "JOIN":
-                return Event(JOIN, args[0][1:], channel=args[2][1:-1])
+                return Event(JOIN, args[0][1:], channel=args[2][1:-1], irc=self)
             elif args[1] == "PART":
-                return Event(PART, args[0][1:], channel=args[2][:-1])
+                return Event(PART, args[0][1:], channel=args[2][:-1], irc=self)
             elif args[1] == "QUIT":
-                return Event(QUIT, args[0][1:], msg=args[2][:-1])
+                return Event(QUIT, args[0][1:], msg=args[2][:-1], irc=self)
+            elif args[1] == "NOTICE":
+                return Event(NOTICE, args[0][1:], msg=" ".join(args[3:])[1:-1], irc=self)
             #TODO parse more events
             else:
-                return Event(OTHER, irc=self)
+                return Event(OTHER, irc=self, msg=data)
 
     def join(self, chan):
         self._send("JOIN " + chan)
+
+    def part(self, chan, reason=None):
+        if reason:
+            self._send("PART " + chan + " :"+reason)
+        else:
+            self._send("PART " + chan)
 
     def kick(self, chan, nick, reason=None):
         self._send("KICK " + chan + " " + nick + (" :"+reason if reason else ""))
@@ -135,7 +148,10 @@ class Irc:
             msg = msg.encode("UTF-8")
         if(isinstance(dest, str)):
             dest = dest.encode("UTF-8")
-        self._send(b"PRIVMSG " + dest + b" :" + msg) # same syntax for channels and users, yay :D
+        self._send(b"PRIVMSG " + dest + b" :" + msg.translate(bytes.maketrans(b"\n", b" "))) # same syntax for channels and users, yay :D
+
+    def setMode(self, mode):
+        self._send("MODE " + self.nick + " " + mode)
 
 
     def connect(self):
