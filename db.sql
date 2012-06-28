@@ -26,3 +26,11 @@ CREATE TABLE nick_host (
     host text,
     count int default 1
 );
+
+CREATE TABLE log (
+    type int not null,
+    source text,
+    dest text,
+    time text,
+    msg text
+);

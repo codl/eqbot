@@ -31,6 +31,11 @@ def search(q):
     tracks = json.loads(page.read().decode("UTF-8"))
     return tracks
 
+def track(id):
+    page = ur.urlopen("http://eqbeats.org/track/%s/json" % (id,))
+    track = json.loads(page.read().decode("UTF-8"))
+    return track
+
 def random():
     page = ur.urlopen("http://eqbeats.org/tracks/random/json")
     tracks = json.loads(page.read().decode("UTF-8"))

@@ -9,14 +9,15 @@ class Channel:
     def __init__(self, name, level=50):
         self.name = name
         self.level = level
+        self.nicks = []
 
     def __repr__(self):
         return("<Channel: " + self.name + " at level " + str(self.level) + ">")
 
 class Hook:
-    def __init__(self, func, level=50):
+    def __init__(self, func, level=None):
         self.func = func
-        self.level = level
+        self.level = level if level else 50
 
     def __repr__(self):
         return("<Hook: " + self.func.__name__ + " at level " + str(self.level) + ">")
@@ -73,10 +74,17 @@ class Bot:
         self.joinHooks = []
         self.partHooks = []
         self.quitHooks = []
+        self.outmsgHooks = []
         self.msgHooks = []
         self.prefix = "!"
         self.channels = []
         self.eventQueues = []
+
+    def channel(self, channel):
+        for c in self.channels:
+            if c.name == channel:
+                return c
+        return None
 
     def join(self, channel, level=50):
         for c in self.channels:
@@ -84,6 +92,11 @@ class Bot:
                 c.level = level
                 return
         self.irc.join(channel)
+        """for e in self.eventLoop():
+            if e.type == irc.OTHER:
+                args = e.msg.split()
+                try:
+                    """
         self.channels.append(Channel(channel, level))
 
     def part(self, channel):
@@ -115,18 +128,25 @@ class Bot:
         self.sendMsg(dest, msg)
 
     def sendMsg(self, dest, msg):
+        if not isinstance(msg, str): msg = msg.decode("utf_8")
         self.msgQueue += [(dest, msg)];
 
     def whois(self, nick):
         return Whois(nick, self)
 
-    def processQueue(self):
+    def processOutQueue(self):
         delay = 0.3
         while True:
             try:
                 msg = self.msgQueue.pop(0)
+
+                if msg[1][:7] == "\1ACTION":
+                    e = irc.Event(irc.ACTION, source=self.irc.nick+"!EqBot@eqbeats.org", msg=msg[1][8:-1], dest=msg[0], irc=self.irc)
+                else:
+                    e = irc.Event(irc.MSG, source=self.irc.nick+"!EqBot@eqbeats.org", msg=msg[1], dest=msg[0], irc=self.irc)
+                for hook in self.outmsgHooks:
+                    threading.Thread(target=hook.func, args=(e, self)).start()
                 self.irc.sendMsg(*msg)
-                print("Sleeping for " + str(delay) + " seconds")
                 time.sleep(delay)
                 delay *= 1.5
                 if delay > 5: delay = 5
@@ -178,7 +198,7 @@ class Bot:
                 threading.Thread(target=hook, args=(e, self)).start()
         elif e.type == irc.JOIN:
             for hook in self.joinHooks:
-                if not e.channel or self.level(e.channel) >= hook.level:
+                if self.level(e.channel) >= hook.level:
                     threading.Thread(target=hook.func, args=(e, self)).start()
         elif e.type == irc.PART:
             for hook in self.partHooks:
@@ -202,20 +222,22 @@ class Bot:
                 self.timeHooks[i][0] = time.time() + hook[1](self)
 
 
-    def addCommandHook(self, command, f, level=50):
+    def addCommandHook(self, command, f, level=None):
         self.commandHooks.update({command: Hook(f, level)})
-    def addRegexHook(self, regex, f, level=50):
+    def addRegexHook(self, regex, f, level=None):
         self.regexHooks += [(re.compile(regex, re.I), Hook(f, level))]
-    def addWildHook(self, f, level=50):
+    def addWildHook(self, f, level=None):
         self.wildHooks += [Hook(f,level),]
-    def addJoinHook(self, f, level=50):
+    def addJoinHook(self, f, level=None):
         self.joinHooks += [Hook(f,level),]
-    def addPartHook(self, f, level=50):
+    def addPartHook(self, f, level=None):
         self.partHooks += [Hook(f,level),]
-    def addQuitHook(self, f, level=50):
+    def addQuitHook(self, f, level=None):
         self.quitHooks += [Hook(f,level),]
-    def addMsgHook(self, f, level=50):
+    def addMsgHook(self, f, level=None):
         self.msgHooks += [Hook(f,level),]
+    def addOutmsgHook(self, f, level=None):
+        self.outmsgHooks += [Hook(f,level),]
 
     def addNoticeHook(self, f):
         self.noticeHooks += [f,]
@@ -226,7 +248,7 @@ class Bot:
 
 
     def run(self):
-        threading.Thread(target=self.processQueue).start()
+        threading.Thread(target=self.processOutQueue).start()
         while True:
             e = self.irc.recv(1)
             if e:

@@ -14,53 +14,70 @@ import sys
 import sqlite3
 import os
 
+LIVE = False
+
 i = irc.Irc("irc.ponychat.net")
 i.setNick("EqBot_")
 if len(sys.argv) > 1 and sys.argv[1] == "live":
     i.setNick("EqBot")
+    LIVE = True
 i.realname = "EqBot"
-i.username = "eqbot"
+i.username = "EqBot"
 i.connect()
 b = bot.Bot(i)
 
 b.lastTid = None
 
 b.userlevel = {}
+b.acc = {}
 b.ops = ["codl", "fmang"]
 OP = 1
+def fetchacc(user, bot = b):
+    bot.sendMsg("NickServ", "acc " + user.partition("!")[0] + " *")
+    for e in bot.eventLoop():
+        if e.type == irc.NOTICE and e.sourceNick == "NickServ":
+            args = e.msg.split()
+            if args[0] == user.partition("!")[0] and args[3] == "ACC":
+                _, _, account, _, level = args[:5]
+                bot.acc[user] = account
+                if int(level) == 3:
+                    if account in bot.ops:
+                        bot.userlevel[user] = OP
+                else:
+                    bot.userlevel[user] = 0
+                break
+def acc(user, bot = b):
+    try:
+        return bot.acc[user]
+    except KeyError:
+        fetchacc(user, bot)
+        return bot.acc[user]
+
 def auth(user, bot = b):
     try:
         return bot.userlevel[user]
     except KeyError:
-        bot.sendMsg("NickServ", "acc " + user.partition("!")[0] + " *")
-        for e in bot.eventLoop():
-            if e.type == irc.NOTICE and e.sourceNick == "NickServ":
-                args = e.msg.split()
-                if args[0] == user.partition("!")[0] and args[3] == "ACC":
-                    _, _, account, _, level = args[:5]
-                    if int(level) == 3 and account in bot.ops:
-                        bot.userlevel[user] = OP
-                    else:
-                        bot.userlevel[user] = 0
-                    break
+        fetchacc(user, bot)
         return bot.userlevel[user]
 
 def preauth(e, bot):
-    auth(e.source)
+    fetchacc(e.source)
 b.addJoinHook(preauth, 0)
 
 def reauth(e, bot):
     try:
-        del bot.userlevel[e.msg]
+        del bot.userlevel[e.msg + "!" + e.source.partition("!")[2]]
+        del bot.acc[e.msg + "!" + e.source.partition("!")[2]]
     except KeyError:
         pass
     time.sleep(0.5) # NickServ lags a bit
-    auth(e.source)
+    fetchacc(e.source)
 b.addNickHook(reauth)
 
 def clearauth(e, bot):
     try:
         del bot.userlevel[e.source]
+        del bot.acc[e.source]
     except KeyError:
         pass
 b.addQuitHook(clearauth, 0)
@@ -82,7 +99,10 @@ def say(e, bot):
             bot.reply(e, "Usage : !say #channel message")
             bot.reply(e, "        !say nick message")
         else:
-            bot.sendMsg(words[1], " ".join(words[2:]))
+            if acc(e.source) == "fmang" and words[1].lower() == "chanserv" and words[2].lower() == "kick" and words[3].lower() == "#eqbeats":
+                e.reply("Do it yourself.")
+            else:
+                bot.sendMsg(words[1], " ".join(words[2:]))
 b.addCommandHook("say", say, 0)
 
 def do(e, bot):
@@ -169,6 +189,11 @@ def plot(e, bot):
 b.addRegexHook("plot", plot, 90)
 
 def _search(e, bot, q):
+    if q.isdigit():
+        t = eqbeats.track(q)
+        if t:
+            e.reply(eqbeats.ppTrack(t))
+            return
     if not q == "":
         tracks = eqbeats.search(q)[:3]
         for t in tracks[:2]:
@@ -195,7 +220,7 @@ b.addCommandHook("flipcoin", flipcoin)
 
 
 
-flipmap = str.maketrans("!'(.∴<?‿⁅[_acbedgfihkjmnrtwvy{¡,)˙∵>¿⁀⁆]‾ɐɔqǝpƃɟıɥʞɾɯuɹʇʍʌʎ}", "¡,)˙∵>¿⁀⁆]‾ɐɔqǝpƃɟıɥʞɾɯuɹʇʍʌʎ}!'(.∴<?‿⁅[_acbedgfihkjmnrtwvy{")
+flipmap = str.maketrans("!'(.∴<?‿⁅[_acbedgfihkjmnrtwvy{¡,)˙∵>¿⁀⁆]‾ɐɔqǝpƃɟıɥʞɾɯuɹʇʍʌʎ}lן697Ɫᔭ43Ɛ¯", "¡,)˙∵>¿⁀⁆]‾ɐɔqǝpƃɟıɥʞɾɯuɹʇʍʌʎ}!'(.∴<?‿⁅[_acbedgfihkjmnrtwvy{ןl96Ɫ74ᔭƐ3_")
 def flip(e, bot):
     if len(e.args) == 0:
         e.reply(irc.action(random.choice((
@@ -316,7 +341,7 @@ def violence(e, bot): # never the answer
         if e.channel == "#eqbeats" and random.random() < 0.1:
             bot.reply(e, "You thought you could abuse old EqBot, that pushover. Well, new EqBot is not going to have any of that!", hilight=False)
             time.sleep(0.5)
-            bot.reply(e, "!kick " + e.sourceNick, hilight=False)
+            bot.sendMsg("ChanServ", "kick #eqbeats " + e.sourceNick, hilight=False)
         else:
             bot.reply(e, random.choice((
                 "Ow!",
@@ -507,6 +532,11 @@ def s_pre(e, bot):
             lastmsgs[e.channel] = "<" + e.sourceNick + "> " + e.msg
         else:
             lastmsgs[e.sourceNick] = "<" + e.sourceNick + "> " + e.msg
+    elif e.type == irc.ACTION:
+        if e.channel:
+            lastmsgs[e.channel] = "* " + e.sourceNick + " " + e.msg
+        else:
+            lastmsgs[e.sourceNick] = "* " + e.sourceNick + " " + e.msg
 b.addWildHook(s_pre, 0)
 
 def s(e, bot):
@@ -568,16 +598,13 @@ def poemm(e, bot):
         if row:
             words = [row[0], row[1]]
     while words[-1] != None:
-        if random.random() > 0.5:
-            c.execute("SELECT third FROM word_triplets WHERE first LIKE ? AND second LIKE ? AND third NOT NULL ORDER BY random() LIMIT 1", (words[-2], words[-1]))
-            word = c.fetchone()
-            if word:
-                wordcount += 2
-                words.append(word[0])
-            else:
-                break
+        c.execute("SELECT third FROM word_triplets WHERE first LIKE ? AND second LIKE ? AND third NOT NULL ORDER BY random() LIMIT 1", (words[-2], words[-1]))
+        word = c.fetchone()
+        if word:
+            wordcount += 2
+            words.append(word[0])
         else:
-            c.execute("SELECT second, third FROM word_triplets WHERE first LIKE ? ORDER BY random() LIMIT 1", (words[-1],))
+            c.execute("SELECT second, third FROM word_triplets WHERE first LIKE ? AND third ORDER BY random() LIMIT 1", (words[-1],))
             triplet = c.fetchone()
             if triplet:
                 wordcount += 2
@@ -782,9 +809,41 @@ def stalk_track(e, bot):
     else:
         c.execute("INSERT INTO nick_host (nick, host) VALUES (?, ?)", (e.sourceNick, e.host))
     db.commit()
-b.addMsgHook(stalk_track)
-b.addJoinHook(stalk_track)
+b.addMsgHook(stalk_track, 30)
+b.addJoinHook(stalk_track, 30)
 b.addNickHook(stalk_track)
+
+def _stalk(nick, bot):
+    host = bot.whois(nick).host
+    nicks = {nick}
+    hosts = {}
+    if host:
+        hosts[host] = 1
+    print(hosts)
+    for _ in range(3):
+        for host in hosts.keys():
+            c.execute("SELECT nick, count FROM nick_host WHERE host = ?", (host,))
+            for nick, count in c:
+                try:
+                    nicks[nick] = nicks[nick] + hosts[host] * count
+                except KeyError:
+                    nicks[nick] = count
+        for nick in nicks.keys():
+            c.execute("SELECT host, count FROM nick_host WHERE nick = ?", (nick,))
+            for host, count in c:
+                try:
+                    hosts[host] = hosts[host] + nicks[nick] * count
+                except KeyError:
+                    hosts[host] = count
+        print(nicks)
+        print(hosts)
+    topnicks = []
+    maxcount = 0
+    for nick, count in nicks.items():
+        if nick != e.args[0] and count > maxcount:
+            topnicks.append(nick)
+            maxcount = count
+    topnicks.reverse()
 
 def stalk(e, bot):
     if len(e.args) == 0:
@@ -792,50 +851,51 @@ def stalk(e, bot):
     else:
         db = getdb()
         c = db.cursor()
-        host = bot.whois(e.args[0]).host
-        nicks = {e.args[0]: 1}
-        hosts = {}
-        if host:
-            hosts[host] = 1
-        print(hosts)
-        for _ in range(3):
-            for host in hosts.keys():
-                c.execute("SELECT nick, count FROM nick_host WHERE host = ?", (host,))
-                for nick, count in c:
-                    try:
-                        nicks[nick] = nicks[nick] + hosts[host] * count
-                    except KeyError:
-                        nicks[nick] = count
-            for nick in nicks.keys():
-                c.execute("SELECT host, count FROM nick_host WHERE nick = ?", (nick,))
-                for host, count in c:
-                    try:
-                        hosts[host] = hosts[host] + nicks[nick] * count
-                    except KeyError:
-                        hosts[host] = count
-            print(nicks)
-            print(hosts)
-        topnicks = []
-        maxcount = 0
-        for nick, count in nicks.items():
-            if nick != e.args[0] and count > maxcount:
-                topnicks.append(nick)
-                maxcount = count
-        topnicks.reverse()
-        if len(topnicks) == 0:
+        nicks = _stalk(e.args[0], bot)
+        if len(nicks) == 0:
             e.reply(e.args[0] + " is a mystery best left unsolved")
         else:
-            e.reply(e.args[0] + " might be "+ " or ".join(topnicks[:2]) + ", but who knows really?")
+            e.reply(e.args[0] + " might be "+ " or ".join(nicks[:2]) + ", but who knows really?")
 b.addCommandHook("stalk", stalk, 70)
 
 def backflop(e, bot):
     e.reply(irc.action("flops around on its back"), hilight=False)
 b.addCommandHook("backflop", backflop)
 
+def log(e, bot):
+    db = getdb()
+    c = db.cursor()
+    if e.channel and e.type in (irc.MSG, irc.JOIN, irc.ACTION, irc.TOPIC):
+        if not hasattr(bot.channel(e.channel), "nicks"):
+            bot.channel(e.channel).nicks = []
+        if not e.nick in bot.channel(e.channel).nicks:
+            bot.channel(e.channel).nicks.append(e.nick)
+    if e.type == irc.PART:
+        bot.channel(e.channel).nicks.remove(e.nick)
+    if e.type in (irc.MSG, irc.JOIN, irc.PART, irc.KICK, irc.ACTION, irc.TOPIC):
+        c.execute("INSERT INTO log (type, source, dest, time, msg) "+
+                "VALUES (?,?,?,?,?)", (e.type, e.source, e.dest, e.time, e.msg))
+        db.commit()
+    elif e.type in (irc.QUIT, irc.NICK):
+        for channel in bot.channels:
+            try:
+                if e.type == irc.NICK:
+                    channel.nicks.remove(e.msg);
+                    channel.nicks.append(e.nick);
+                else:
+                    channel.nicks.remove(e.nick);
+                c.execute("INSERT INTO log (type, source, dest, time, msg) "+
+                        "VALUES (?,?,?,?,?)", (e.type, e.source, channel.name, e.time, e.msg))
+            except (ValueError, AttributeError):
+                pass
+        db.commit()
+b.addWildHook(log, 30)
+b.addOutmsgHook(log, 30)
+
 time.sleep(2)
 i.sendMsg("NickServ", "IDENTIFY FnkrfBPo9f-X")
 i.setMode("-x")
-if len(sys.argv) > 1 and sys.argv[1] == "live":
+if LIVE:
     b.join("#eqbeats", 100)
     b.join("#bronymusic", 70)
 b.run()

@@ -19,6 +19,7 @@ KICK = 7
 JOIN = 8
 PART = 9
 QUIT = 10
+TOPIC = 13
 NOTICE = 11
 ERROR = 12
 OTHER = 0
@@ -46,16 +47,17 @@ class Event:
     def __repr__(self):
         return "<IRC event from " + self.source + ">"
 
-    def __init__(self, type, source=None, msg=None, channel=None, irc=None):
+    def __init__(self, type, source=None, dest=None, msg=None, etime=None, irc=None, channel=None):
         self.type = type
         self.source = source
         self.nick = source.partition("!")[0] if source else None
         self.sourceNick = self.nick
         self.host = source.partition("@")[2] if source else None
         self.msg = msg
-        self.channel = channel
+        self.channel = dest if dest and dest[0] in "#&" else channel
+        self.dest = dest if dest else channel if channel else irc.nick if irc else None
         self.irc = irc
-        self.time = time.time()
+        self.time = float(etime) if etime else time.time()
 
 class Irc:
     def __repr__(self):
@@ -108,25 +110,27 @@ class Irc:
                 if args[2] == self.nick:
                     if args[3] == ":\1ACTION":
                         args[-1] = args[-1][:-2] # remove \1\r
-                        return Event(ACTION, args[0][1:], " ".join(args[4:]), irc=self)
+                        return Event(ACTION, source=args[0][1:], msg=" ".join(args[4:]), irc=self)
                     else:
-                        return Event(MSG, args[0][1:], " ".join(args[3:])[1:-1], irc=self)
+                        return Event(MSG, source=args[0][1:], msg=" ".join(args[3:])[1:-1], irc=self)
                 else:
                     if args[3] == ":\1ACTION":
                         args[-1] = args[-1][:-2] # remove \1\r
-                        return Event(ACTION, args[0][1:], " ".join(args[4:]), channel=args[2], irc=self)
+                        return Event(ACTION, source=args[0][1:], msg=" ".join(args[4:]), channel=args[2], irc=self)
                     else:
-                        return Event(MSG, args[0][1:], " ".join(args[3:])[1:-1], args[2], irc=self)
+                        return Event(MSG, source=args[0][1:], msg=" ".join(args[3:])[1:-1], channel=args[2], irc=self)
             elif args[1] == "NICK":
-                return Event(NICK, args[2][1:-1] + "!" + args[0].partition("!")[2], msg=args[0][1:].partition("!")[0], irc=self)
+                return Event(NICK, source=args[2][1:-1] + "!" + args[0].partition("!")[2], msg=args[0][1:].partition("!")[0], irc=self) #source is new nick, msg is old nick, so reply() works
             elif args[1] == "JOIN":
-                return Event(JOIN, args[0][1:], channel=args[2][1:-1], irc=self)
+                return Event(JOIN, source=args[0][1:], channel=args[2][1:-1], irc=self)
             elif args[1] == "PART":
-                return Event(PART, args[0][1:], channel=args[2][:-1], irc=self)
+                return Event(PART, source=args[0][1:], channel=args[2][:-1], irc=self)
             elif args[1] == "QUIT":
-                return Event(QUIT, args[0][1:], msg=args[2][:-1], irc=self)
+                return Event(QUIT, source=args[0][1:], msg=" ".join(args[2:])[:-1], irc=self)
             elif args[1] == "NOTICE":
-                return Event(NOTICE, args[0][1:], msg=" ".join(args[3:])[1:-1], irc=self)
+                return Event(NOTICE, source=args[0][1:], msg=" ".join(args[3:])[1:-1], irc=self)
+            elif args[1] == "TOPIC":
+                return Event(TOPIC, source=args[0][1:], dest=args[2], msg=" ".join(args[3:])[1:-1], irc=self)
             #TODO parse more events
             else:
                 return Event(OTHER, irc=self, msg=data)
