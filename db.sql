@@ -2,7 +2,8 @@ CREATE TABLE mail (
     target text,
     source text,
     msg text,
-    private boolean -- actually an int, because sqlite, but whatever
+    private boolean, -- actually an int, because sqlite, but whatever
+    time integer
 );
 
 CREATE TABLE word_pairs (
@@ -31,6 +32,12 @@ CREATE TABLE log (
     type int not null,
     source text,
     dest text,
-    time text,
-    msg text
+    msg text,
+    time integer
+);
+
+CREATE TABLE definitions (
+    source text,
+    thing text,
+    definition text
 );

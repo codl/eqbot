@@ -36,6 +36,7 @@ def html(msg):
     msg = parts[0]
     spancount = 0
     for part in parts[1:]:
+        if len(part) == 0: continue
         spancount += 1
         if part[0] == "0":
             part = part[1:]
@@ -147,7 +148,7 @@ for channel in CHANNELS:
         if int(e.time) - int(e.time) % DAY != day:
             linenr = 0
             day = int(e.time) - int(e.time) % DAY
-            pprint = strftime("%y-%m-%d", gmtime(day))
+            pprint = strftime("%Y-%m-%d", gmtime(day))
             if len(days) > 0:
                 days[-1][1].write("""
                 </div>
@@ -226,7 +227,7 @@ for channel in CHANNELS:
     #pages.reverse()
     pages.sort(reverse=True)
     for page in pages:
-        chanindex.write(""" <a href="%s.html">%s</a> <small>(<a href="%s.txt">TXT</a>)</small>""" % ((page,)*3))
+        chanindex.write(""" <a href="%s.html">%s</a>&nbsp;<small>(<a href="%s.txt">TXT</a>)</small>""" % ((page,)*3))
     chanindex.write("""
         </div>
         <p id="footer" class="I don't even know">

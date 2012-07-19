@@ -4,7 +4,7 @@ import urllib.parse as up
 from urllib.error import HTTPError, URLError
 
 def ppTrack(t):
-    return t['title'] + " by " + t['artist']['name'] + " (http://eqbeats.org/track/" + str(t['id']) + ")"
+    return t['title'] + " by " + t['artist']['name'] + " http://eqbeats.org/track/" + str(t['id']) + ""
 
 seenTracks = []
 def newTracks():

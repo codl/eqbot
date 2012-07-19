@@ -4,6 +4,7 @@ import irc
 import re
 import time
 import threading
+import copy
 
 class Channel:
     def __init__(self, name, level=50):
@@ -92,11 +93,6 @@ class Bot:
                 c.level = level
                 return
         self.irc.join(channel)
-        """for e in self.eventLoop():
-            if e.type == irc.OTHER:
-                args = e.msg.split()
-                try:
-                    """
         self.channels.append(Channel(channel, level))
 
     def part(self, channel):
@@ -177,8 +173,9 @@ class Bot:
                 if not e.channel or self.level(e.channel) >= hook[1].level:
                     match = hook[0].search(e.msg)
                     if match:
-                        e.groups = match.groups()
-                        threading.Thread(target=hook[1].func, args=(e, self)).start()
+                        e_ = copy.deepcopy(e)
+                        e_.groups = match.groups()
+                        threading.Thread(target=hook[1].func, args=(e_, self)).start()
             if not e.channel:
                 try:
                     e.args = e.msg.split()[1:]

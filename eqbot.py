@@ -82,11 +82,11 @@ def clearauth(e, bot):
         pass
 b.addQuitHook(clearauth, 0)
 
-def showauths(e, bot):
+def debug_auths(e, bot):
     if auth(e.source) == OP:
         for nick, level in bot.userlevel.items():
-            bot.reply(e, nick + ": " + str(level), hilight=False)
-b.addCommandHook("showauths", showauths, 0)
+            bot.reply(e, nick + ": " + str(level))
+b.addCommandHook("auths", debug_auths, 0)
 
 def clearauths(e, bot):
     bot.userlevel = {}
@@ -147,7 +147,7 @@ b.addCommandHook("part", part, 0)
 def channels(e, bot):
     if auth(e.source) == OP:
         for channel in bot.channels:
-            bot.reply(e, str(channel), hilight=False)
+            bot.reply(e, str(channel))
 b.addCommandHook("channels", channels, 0)
 
 
@@ -167,12 +167,12 @@ b.addCommandHook("ping", ping, 10)
 
 def aeiou(e, bot):
     if random.random() < 0.5:
-        bot.reply(e, random.choice(("football!", "uuuuuuuuuu", "holla holla get $", "here comes another chinese earthquake ebrbrbrbrbrbrbrbrbrbrbrbrb", "99999999999999")), hilight=False)
+        bot.reply(e, random.choice(("football!", "uuuuuuuuuu", "holla holla get $", "here comes another chinese earthquake ebrbrbrbrbrbrbrbrbrbrbrbrb", "99999999999999")))
 b.addRegexHook("aeiou", aeiou, 90)
 b.addRegexHook("john madden", aeiou, 90)
 
 def hyphen(e, bot):
-    bot.reply(e, "<" + e.sourceNick + "> " + re.sub("(\w)-(ass|flank) (\w)", "\\1 \\2-\\3", e.msg, flags=re.I), hilight=False)
+    bot.reply(e, "<" + e.sourceNick + "> " + re.sub("(\w)-(ass|flank) (\w)", "\\1 \\2-\\3", e.msg, flags=re.I))
 b.addRegexHook("\w-(ass|flank) \w", hyphen, 90)
 
 def plot(e, bot):
@@ -185,7 +185,7 @@ def plot(e, bot):
         elif words[i] == "PLOT":
             words[i] = "INTRIGUE"
             swapped = True
-    if swapped: bot.reply(e, "<" + e.sourceNick + "> " + " ".join(words), hilight=False)
+    if swapped: bot.reply(e, "<" + e.sourceNick + "> " + " ".join(words))
 b.addRegexHook("plot", plot, 90)
 
 def _search(e, bot, q):
@@ -232,25 +232,25 @@ def flip(e, bot):
             "flips a chair (╯°□°)╯︵ =|_",
             "flips a chair _|= ︵╰(°□°╰)",
             "flips some chairs _|= ︵╰(°□°)╯︵ =|_"
-            ))), hilight=False)
+            ))))
     elif e.args[0] == "table":
         e.reply(irc.action(random.choice((
             "flips a table (╯°□°)╯︵ ┻━┻",
             "flips a table ┻━┻ ︵╰(°□°╰)",
-            ))), hilight=False)
+            ))))
     elif e.args[0] == "tables":
         e.reply(irc.action(
             "flips some tables ┻━┻ ︵╰(°□°)╯︵ ┻━┻"
-            ), hilight=False)
+            ))
     elif e.args[0] == "chair":
         e.reply(irc.action(random.choice((
             "flips a chair (╯°□°)╯︵ =|_",
             "flips a chair _|= ︵╰(°□°╰)",
-            ))), hilight=False)
+            ))))
     elif e.args[0] == "chairs":
         e.reply(irc.action(
             "flips some chairs _|= ︵╰(°□°)╯︵ =|_"
-            ), hilight=False)
+            ))
     else:
         flipped = list(" ".join(e.args).lower().translate(flipmap))
         flipped.reverse()
@@ -260,7 +260,7 @@ def flip(e, bot):
             ("an" if e.args[0][0] in "aeiouAEIOU" else "a") + " " +
             " ".join(e.args) + " " +
             "(╯°□°)╯︵ " + flipped
-            ), hilight=False)
+            ))
 b.addCommandHook("flip", flip, 70)
 
 def choice(e, bot):
@@ -319,16 +319,16 @@ def roll(e, bot):
 b.addCommandHook("roll", roll, 50)
 
 def rejoice(e, bot):
-    bot.reply(e, "yay", hilight=False)
+    bot.reply(e, "yay")
 b.addCommandHook("rejoice", rejoice, 50)
 b.addCommandHook("cheer", rejoice, 50)
 
 def louder(e, bot):
-    bot.reply(e, b"\002yay", hilight=False)
+    bot.reply(e, b"\002yay")
 b.addCommandHook("louder", louder, 50)
 
 def louder_(e, bot):
-    bot.reply(e, b"\002Yay!", hilight=False)
+    bot.reply(e, b"\002Yay!")
 b.addCommandHook("louder!", louder_, 50)
 
 def kindness(e, bot):
@@ -339,9 +339,9 @@ b.addWildHook(kindness, 30)
 def violence(e, bot): # never the answer
     if(e.type == irc.ACTION and re.search("(hits|kicks|slaps|punches|crushes|maims|harms|shoots|stabs) " + i.nick, e.msg, re.I)):
         if e.channel == "#eqbeats" and random.random() < 0.1:
-            bot.reply(e, "You thought you could abuse old EqBot, that pushover. Well, new EqBot is not going to have any of that!", hilight=False)
+            bot.reply(e, "You thought you could abuse old EqBot, that pushover. Well, new EqBot is not going to have any of that!")
             time.sleep(0.5)
-            bot.sendMsg("ChanServ", "kick #eqbeats " + e.sourceNick, hilight=False)
+            bot.sendMsg("ChanServ", "kick #eqbeats " + e.sourceNick)
         else:
             bot.reply(e, random.choice((
                 "Ow!",
@@ -355,7 +355,7 @@ def violence(e, bot): # never the answer
                 irc.action("whimpers"),
                 irc.action("whines"),
                 irc.action("flees"))
-            ), hilight=False)
+            ))
 b.addWildHook(violence, 30)
 
 def lr(): return random.choice(("left", "right"))
@@ -448,14 +448,14 @@ b.bfcounter = 0
 b.bflast = 0
 def backflip(e, bot):
     if bot.bfcounter < 12:
-        bot.reply(e, irc.action("does "+" ".join(adjective())+" backflip and lands on its "+bodypart()), hilight=False)
+        bot.reply(e, irc.action("does "+" ".join(adjective())+" backflip and lands on its "+bodypart()))
         bot.bflast = time.time()
         bot.bfcounter += 1
         if bot.bflast + 60 < time.time():
             bot.bfcounter = 1
     elif bot.bfcounter == 12:
         bot.bfcounter = 13
-        bot.reply(e, irc.action("is too tired to backflip right now"), hilight=False)
+        bot.reply(e, irc.action("is too tired to backflip right now"))
         time.sleep(60)
         bot.bfcounter = 0
 b.addCommandHook("backflip", backflip, 30)
@@ -476,7 +476,7 @@ b.addRegexHook("rfc\?([0-9]+)", rfc, 30)
 def url(e, bot):
     title = fetchTitle(e.groups[0])
     if title:
-        bot.reply(e, b"\02" + title.encode("utf_8") + b"\2 posted by " + e.sourceNick.encode("utf_8"), hilight=False)
+        bot.reply(e, b"\02" + title.encode("utf_8") + b"\2 posted by " + e.sourceNick.encode("utf_8"))
 b.addRegexHook("(https?://[^ ]*)", url, 90)
 
 def getdb():
@@ -486,16 +486,19 @@ def checkMail(e, bot):
     nick = e.msg if e.type == irc.NICK else e.sourceNick
     db = getdb()
     c = db.cursor()
-    c.execute("SELECT source, msg, private FROM mail WHERE dest = ?", (nick,))
+    c.execute("SELECT source, msg, private, time FROM mail WHERE dest LIKE ?", (nick,))
     messages = c.fetchall()
-    c.execute("DELETE FROM mail WHERE dest = ?", (nick,))
-    db.commit()
+    c.execute("DELETE FROM mail WHERE dest LIKE ?", (nick,))
     for m in messages:
-        msg = "Mail from " + m[0] + ": " + m[1]
+        msg = nick + ": Mail from " + m[0]
+        if m[3]:
+            msg += " sent %s ago" % (relativetime(time.time() - int(m[3])))
+        msg += ": " + m[1]
         if m[2] or not e.channel:
             bot.sendMsg(nick, msg)
         else:
             bot.reply(e, msg)
+    db.commit()
 b.addMsgHook(checkMail, 90)
 b.addJoinHook(checkMail, 90)
 
@@ -509,7 +512,7 @@ def mail(e, bot):
     nick = args[1]
     msg = " ".join(args[2:])
     private = (e.channel == None)
-    c.execute("INSERT INTO mail (source, dest, private, msg) VALUES (?, ?, ?, ?)", (e.sourceNick, nick, private, msg))
+    c.execute("INSERT INTO mail (source, dest, private, msg, time) VALUES (?, ?, ?, ?, ?)", (e.sourceNick, nick, private, msg, time.time()))
     db.commit()
     bot.reply(e, "Message stored!")
 b.addCommandHook("mail", mail, 90)
@@ -548,7 +551,7 @@ def s(e, bot):
             if len(args) >= 3:
                 msg = re.sub(args[1], args[2], lastmsgs[source])
                 lastmsgs[source] = msg
-                bot.reply(e, msg, hilight=False)
+                bot.reply(e, msg)
     except KeyError:
         pass
 b.addRegexHook("^s(?P<delim>[^ \tA-Za-z]).*(?P=delim)", s, 70)
@@ -586,11 +589,16 @@ def poemm(e, bot):
         if len(words) < 2:
             c.execute("SELECT second FROM word_pairs WHERE first LIKE ? ORDER BY random() LIMIT 1", (words[-1],))
             word = c.fetchone()
-            if word:
+            if word and word[0]:
                 wordcount += 1
                 words.append(word[0])
             else:
-                words.append(None)
+                c.execute("SELECT first, second, third FROM word_triplets WHERE first NOT NULL AND third NOT NULL ORDER BY random() LIMIT 1")
+                row = c.fetchone()
+                words.append(row[0])
+                words.append(row[1])
+                words.append(row[2])
+                wordcount += 3
     else:
         fromscratch = True
         c.execute("SELECT second, third FROM word_triplets WHERE first IS NULL ORDER BY random() LIMIT 1")
@@ -615,22 +623,22 @@ def poemm(e, bot):
         if fromscratch and random.random() > .5:
             poemm(e, bot)
         else:
-            bot.reply(e, "I'm out of inspiration, sorry.", hilight=False)
+            bot.reply(e, "I'm out of inspiration, sorry.")
     else:
         if words[-1] == None: words = words[:-1]
         msg = " ".join(words)
-        bot.reply(e, msg, hilight=False)
+        bot.reply(e, msg)
         if e.channel:
             lastmsgs[e.channel] = "<" + i.nick + "> " + msg
 b.addCommandHook("chain", poemm)
 b.addCommandHook("poem", poemm)
 
 def dundundun(e, bot):
-    bot.reply(e, "DUN DUN DUUUN", hilight=False)
+    bot.reply(e, "DUN DUN DUUUN")
 b.addRegexHook("or[\. ]+(is|am|are|was|were|will|do|does|did|can|could|should|shall)[\. ]+(I|he|she|it|you|they|we)[ ?!]*$", dundundun, 70)
 
 def batman(e, bot):
-    bot.reply(e, "I'm the " + adjective()[1] + " Batman.", hilight=False)
+    bot.reply(e, "I'm the " + adjective()[1] + " Batman.")
 b.addCommandHook("batman", batman)
 
 def technothing(r=-1):
@@ -736,7 +744,7 @@ def feature(e, bot):
     if auth(e.source) == OP:
         tids = e.msg.split()[1:]
         if len(tids) == 0 and bot.lastTid:
-            print(bot.lastTid)
+            print(repr(bot.lastTid))
             tids = (bot.lastTid,)
         for tid in tids:
             try:
@@ -747,6 +755,15 @@ def feature(e, bot):
                 break
 b.addCommandHook("feature", feature, 0)
 b.addCommandHook("fqueue", feature, 0)
+
+def fetchTid(e, bot):
+    bot.lastTid = e.groups[0]
+b.addRegexHook("http://(?:www\\.)?eqbeats\\.org/track/([0-9]+)", fetchTid)
+
+def debug_tid(e, bot):
+    if auth(e.source) == OP:
+        e.reply(repr(bot.lastTid))
+b.addCommandHook("tid", debug_tid, 0)
 
 def inc(var):
     db = getdb()
@@ -792,12 +809,16 @@ def getvalue(e, bot):
             val = str(row[1])
         else:
             val = "0"
+        #if var.lower() in ("python", "rarity"):
+        #    val = str(random.randint(1, 99999))
+        #elif var.lower() in ("twilight", "twilightsparkle", "twilight_sparkle"):
+        #    val = "∞"
         msg = "Karma for "+var+" : "+val
-        bot.reply(e, msg, hilight=False)
+        bot.reply(e, msg)
 b.addRegexHook("[^ \\t]==", getvalue, 90)
 
 def sadtrombone(e, bot):
-    bot.reply(e, "http://www.sadtrombone.com/", hilight=False)
+    bot.reply(e, "http://www.sadtrombone.com/")
 b.addCommandHook("sadtrombone", sadtrombone, 70)
 
 def stalk_track(e, bot):
@@ -813,9 +834,11 @@ b.addMsgHook(stalk_track, 30)
 b.addJoinHook(stalk_track, 30)
 b.addNickHook(stalk_track)
 
-def _stalk(nick, bot):
-    host = bot.whois(nick).host
-    nicks = {nick}
+def _stalk(inick, bot):
+    db = getdb()
+    c = db.cursor()
+    host = bot.whois(inick).host
+    nicks = {inick:1}
     hosts = {}
     if host:
         hosts[host] = 1
@@ -840,10 +863,11 @@ def _stalk(nick, bot):
     topnicks = []
     maxcount = 0
     for nick, count in nicks.items():
-        if nick != e.args[0] and count > maxcount:
+        if nick != inick and count > maxcount:
             topnicks.append(nick)
             maxcount = count
     topnicks.reverse()
+    return topnicks
 
 def stalk(e, bot):
     if len(e.args) == 0:
@@ -859,7 +883,7 @@ def stalk(e, bot):
 b.addCommandHook("stalk", stalk, 70)
 
 def backflop(e, bot):
-    e.reply(irc.action("flops around on its back"), hilight=False)
+    e.reply(irc.action("flops around on its back"))
 b.addCommandHook("backflop", backflop)
 
 def log(e, bot):
@@ -871,7 +895,10 @@ def log(e, bot):
         if not e.nick in bot.channel(e.channel).nicks:
             bot.channel(e.channel).nicks.append(e.nick)
     if e.type == irc.PART:
-        bot.channel(e.channel).nicks.remove(e.nick)
+        try:
+            bot.channel(e.channel).nicks.remove(e.nick)
+        except (ValueError, AttributeError):
+            pass
     if e.type in (irc.MSG, irc.JOIN, irc.PART, irc.KICK, irc.ACTION, irc.TOPIC):
         c.execute("INSERT INTO log (type, source, dest, time, msg) "+
                 "VALUES (?,?,?,?,?)", (e.type, e.source, e.dest, e.time, e.msg))
@@ -892,10 +919,108 @@ def log(e, bot):
 b.addWildHook(log, 30)
 b.addOutmsgHook(log, 30)
 
+def whatis(e, bot):
+    if len(e.args) == 0:
+        e.reply("Usage : !whatis <thing>")
+        return
+    thing = " ".join(e.args)
+    db = getdb()
+    c = db.cursor()
+    c.execute("SELECT thing, definition FROM definitions WHERE thing LIKE ? ORDER BY length(thing) ASC LIMIT 1", ("%"+thing+"%",))
+    row = c.fetchone()
+    if row:
+        e.reply(row[0]  + " " + row[1])
+    else:
+        verb = "are" if e.msg.split()[0][-3:] == "are" else "was" if e.msg.split()[0][-3:] == "was" else "were" if e.msg.split()[0][-4:] == "were" else "is"
+        e.reply(thing + " " + verb + " nothing.")
+b.addCommandHook("whatis", whatis, 70)
+b.addCommandHook("whois", whatis, 70)
+b.addCommandHook("whatare", whatis, 70)
+b.addCommandHook("whoare", whatis, 70)
+b.addCommandHook("whatwas", whatis, 70)
+b.addCommandHook("whowas", whatis, 70)
+b.addCommandHook("whatwere", whatis, 70)
+b.addCommandHook("whowere", whatis, 70)
+
+def thatis(e, bot):
+    db = getdb()
+    c = db.cursor()
+    thing = " ".join(e.groups[0].split()) # collapse whitespace
+    c.execute("SELECT 1 FROM definitions WHERE thing LIKE ?", (thing,))
+    if c.fetchone():
+        c.execute("UPDATE definitions SET definition = ?, source = ? WHERE thing LIKE ?", (e.groups[1], e.source, thing))
+    else:
+        c.execute("INSERT INTO definitions (definition, thing, source) VALUES (?, ?, ?)", (e.groups[1], thing, e.source))
+    db.commit()
+b.addRegexHook("(.+) +((?:is|are|was|were|might be) +.+)", thatis, 70)
+
+def relativetime(lapse):
+    if lapse < 1:
+        return "some milliseconds"
+    elif lapse < 120: # 2 minutes
+        return "%s seconds" % (int(lapse),)
+    elif lapse < 60 * 60 * 2: # 2 hours
+        return "%s minutes" % (int(lapse / 60),)
+    elif lapse < 60 * 60 * 24: # 1 day
+        return "%s hours and %s minutes" % (int(lapse / 60 / 60), int((lapse/60) % 60))
+    elif lapse < 60 * 60 * 24 * 2: # 2 days
+        return "%s hours" % (int(lapse / 60 / 60),)
+    elif lapse < 60 * 60 * 24 * 61: # 2 months
+        return "%s days" % (int(lapse / 60 / 60 / 24),)
+    else:
+        return "%s months" % (int(lapse / 60 / 60 / 24 / 30.5),) # wonky but who cares
+
+
+def seen(e, bot):
+    if len(e.args) != 1:
+        e.reply("Usage : !seen <nick>")
+        return
+    db = getdb()
+    c = db.cursor()
+    nick = e.args[0]
+    if nick.lower() == e.nick.lower():
+        e.reply(nick + " was last seen right here, right now, asking dumb questions.")
+        return
+    elif nick.lower() == e.irc.nick.lower():
+        e.reply("I'm right here, hello.")
+        return
+    c.execute("SELECT type, source, dest, msg, time FROM log WHERE source LIKE ? OR (msg LIKE ? AND type == ?) ORDER BY time DESC LIMIT 1", (nick + "!%", nick, irc.NICK))
+    row = c.fetchone()
+    if row:
+        e_ = irc.Event(*row)
+        msg = nick + " was last seen " + relativetime(time.time() - e_.time) + " ago, "
+        if e_.type == irc.QUIT:
+            msg += "quitting irc with message \"%s\"" % (e_.msg,)
+        elif e_.type == irc.JOIN:
+            msg += "joining %s." % (e_.channel,)
+        elif e_.type == irc.PART:
+            msg += "leaving %s." % (e_.channel,)
+        elif e_.type == irc.NICK:
+            msg += "changing their nick "
+            if e_.nick.lower() == nick.lower():
+                msg += "from %s." % (e_.msg,)
+            else:
+                msg += "to %s." % (e_.nick,)
+        elif e_.type in (irc.MSG, irc.ACTION):
+            if e_.channel:
+                if e_.type == irc.MSG:
+                    msg += "in %s: <%s> %s" % (e_.channel, e_.nick, e_.msg)
+                else:
+                    msg += "in %s: * %s %s" % (e_.channel, e_.nick, e_.msg)
+            else:
+                msg += "via query."
+        else:
+            msg += "doing something unusual."
+        e.reply(msg)
+    else:
+        e.reply("As far as I know, " + nick + " is just an urban legend.")
+b.addCommandHook("seen", seen, 90)
+
 time.sleep(2)
 i.sendMsg("NickServ", "IDENTIFY FnkrfBPo9f-X")
 i.setMode("-x")
 if LIVE:
     b.join("#eqbeats", 100)
     b.join("#bronymusic", 70)
+    b.join("#fr", 70)
 b.run()
