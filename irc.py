@@ -126,7 +126,7 @@ class Irc:
             elif args[1] == "PART":
                 return Event(PART, source=args[0][1:], channel=args[2][:-1], irc=self)
             elif args[1] == "QUIT":
-                return Event(QUIT, source=args[0][1:], msg=" ".join(args[2:])[:-1], irc=self)
+                return Event(QUIT, source=args[0][1:], msg=" ".join(args[2:])[1:-1], irc=self)
             elif args[1] == "NOTICE":
                 return Event(NOTICE, source=args[0][1:], msg=" ".join(args[3:])[1:-1], irc=self)
             elif args[1] == "TOPIC":
