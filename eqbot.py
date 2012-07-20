@@ -169,11 +169,11 @@ def aeiou(e, bot):
     if random.random() < 0.5:
         bot.reply(e, random.choice(("football!", "uuuuuuuuuu", "holla holla get $", "here comes another chinese earthquake ebrbrbrbrbrbrbrbrbrbrbrbrb", "99999999999999")))
 b.addRegexHook("aeiou", aeiou, 90)
-b.addRegexHook("john madden", aeiou, 90)
+b.addRegexHook("john madden", aeiou, 70)
 
 def hyphen(e, bot):
     bot.reply(e, "<" + e.sourceNick + "> " + re.sub("(\w)-(ass|flank) (\w)", "\\1 \\2-\\3", e.msg, flags=re.I))
-b.addRegexHook("\w-(ass|flank) \w", hyphen, 90)
+b.addRegexHook("\w-(ass|flank) \w", hyphen, 70)
 
 def plot(e, bot):
     words = e.msg.split(" ")
@@ -211,7 +211,6 @@ b.addRegexHook("^\?([^ \t].*)$", regexsearch, 90)
 
 def cmdsearch(e, bot):
     _search(e, bot, " ".join(e.msg.split()[1:]))
-b.addCommandHook("eqbsearch", cmdsearch, 30)
 b.addCommandHook("eqsearch", cmdsearch, 30)
 
 def flipcoin(e, bot):
