@@ -883,7 +883,7 @@ b.addCommandHook("stalk", stalk, 70)
 
 def backflop(e, bot):
     e.reply(irc.action("flops around on its back"))
-b.addCommandHook("backflop", backflop)
+b.addCommandHook("backflop", backflop, 70)
 
 def log(e, bot):
     db = getdb()
@@ -930,16 +930,12 @@ def whatis(e, bot):
     if row:
         e.reply(row[0]  + " " + row[1])
     else:
-        verb = "are" if e.msg.split()[0][-3:] == "are" else "was" if e.msg.split()[0][-3:] == "was" else "were" if e.msg.split()[0][-4:] == "were" else "is"
+        verb = "are" if e.msg.split()[0][-3:] == "are" else "is"
         e.reply(thing + " " + verb + " nothing.")
 b.addCommandHook("whatis", whatis, 70)
 b.addCommandHook("whois", whatis, 70)
 b.addCommandHook("whatare", whatis, 70)
 b.addCommandHook("whoare", whatis, 70)
-b.addCommandHook("whatwas", whatis, 70)
-b.addCommandHook("whowas", whatis, 70)
-b.addCommandHook("whatwere", whatis, 70)
-b.addCommandHook("whowere", whatis, 70)
 
 def thatis(e, bot):
     db = getdb()
