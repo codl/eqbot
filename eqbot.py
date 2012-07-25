@@ -504,12 +504,11 @@ b.addJoinHook(checkMail, 90)
 def mail(e, bot):
     db = getdb()
     c = db.cursor()
-    args = e.msg.split()
-    if len(args) < 3:
+    if len(e.args) < 2:
         bot.reply(e, "Syntax : !mail nick message")
         return
-    nick = args[1]
-    msg = " ".join(args[2:])
+    nick = e.args[0]
+    msg = " ".join(e.msg.split(" "))[2:] # avoid collapsing whitespace
     private = (e.channel == None)
     c.execute("INSERT INTO mail (source, dest, private, msg, time) VALUES (?, ?, ?, ?, ?)", (e.sourceNick, nick, private, msg, time.time()))
     db.commit()
@@ -521,11 +520,11 @@ b.addCommandHook("m", mail, 90)
 def mailbag(e, bot):
     db = getdb()
     c = db.cursor()
-    if auth(e.source) == OP:
-        c.execute("SELECT dest FROM mail GROUP BY dest;")
-        rows = c.fetchall()
-        e.reply("I have mail for : " + ("nopony" if len(rows) == 0 else " ".join(row[0] for row in rows)))
-b.addCommandHook("mailbag", mailbag, 0)
+    c.execute("SELECT dest FROM mail GROUP BY dest;")
+    rows = c.fetchall()
+    e.reply("I have mail for : " + ("nopony" if len(rows) == 0 else " ".join(row[0] for row in rows)))
+b.addCommandHook("mailbag", mailbag, 90)
+b.addCommandHook("mailbox", mailbag, 90)
 
 lastmsgs = {}
 def s_pre(e, bot):
@@ -925,7 +924,7 @@ def whatis(e, bot):
     thing = " ".join(e.args)
     db = getdb()
     c = db.cursor()
-    c.execute("SELECT thing, definition FROM definitions WHERE thing LIKE ? ORDER BY length(thing) ASC LIMIT 1", ("%"+thing+"%",))
+    c.execute("SELECT thing, definition FROM definitions WHERE thing LIKE ? ORDER BY length(thing) ASC, random() LIMIT 1", ("%"+thing+"%",))
     row = c.fetchone()
     if row:
         e.reply(row[0]  + " " + row[1])
@@ -941,13 +940,9 @@ def thatis(e, bot):
     db = getdb()
     c = db.cursor()
     thing = " ".join(e.groups[0].split()) # collapse whitespace
-    c.execute("SELECT 1 FROM definitions WHERE thing LIKE ?", (thing,))
-    if c.fetchone():
-        c.execute("UPDATE definitions SET definition = ?, source = ? WHERE thing LIKE ?", (e.groups[1], e.source, thing))
-    else:
-        c.execute("INSERT INTO definitions (definition, thing, source) VALUES (?, ?, ?)", (e.groups[1], thing, e.source))
+    c.execute("INSERT INTO definitions (definition, thing, source) VALUES (?, ?, ?)", (e.groups[1], thing, e.source))
     db.commit()
-b.addRegexHook("(.+) +((?:is|are|was|were|might be) +.+)", thatis, 70)
+b.addRegexHook("(.+) +((?:is|are|could be|might be) +.+)", thatis, 70)
 
 def relativetime(lapse):
     if lapse < 1:
@@ -1011,11 +1006,16 @@ def seen(e, bot):
         e.reply("As far as I know, " + nick + " is just an urban legend.")
 b.addCommandHook("seen", seen, 90)
 
-time.sleep(2)
+i.recv()
+i.recv()
+i.recv()
+i.recv()
+i.recv()
+i.recv()
 i.sendMsg("NickServ", "IDENTIFY FnkrfBPo9f-X")
 i.setMode("-x")
 if LIVE:
     b.join("#eqbeats", 100)
     b.join("#bronymusic", 70)
-    b.join("#fr", 70)
+    b.join("#saucisse", 90)
 b.run()
