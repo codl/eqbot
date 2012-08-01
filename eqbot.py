@@ -250,6 +250,8 @@ def flip(e, bot):
         e.reply(irc.action(
             "flips some chairs _|= ︵╰(°□°)╯︵ =|_"
             ))
+    elif e.args[0] == "back":
+        backflip(e, bot)
     else:
         flipped = list(" ".join(e.args).lower().translate(flipmap))
         flipped.reverse()
@@ -284,11 +286,6 @@ def newTracks(bot):
         bot.lastTid = str(t['id'])
     return 120
 b.addTimeHook(3, newTracks)
-
-def once(bot):
-    bot.sendMsg("#eqbeats", random.choice(("untz", "once")))
-    return random.randint(60, 86400)
-b.addTimeHook(random.randint(60, 86400), once)
 
 def roll(e, bot):
     total = 0
@@ -481,7 +478,7 @@ b.addRegexHook("(https?://[^ ]*)", url, 90)
 def getdb():
     return sqlite3.connect("db")
 
-def checkMail(e, bot):
+def deliverMail(e, bot):
     nick = e.msg if e.type == irc.NICK else e.sourceNick
     db = getdb()
     c = db.cursor()
@@ -498,8 +495,8 @@ def checkMail(e, bot):
         else:
             bot.reply(e, msg)
     db.commit()
-b.addMsgHook(checkMail, 90)
-b.addJoinHook(checkMail, 90)
+b.addMsgHook(deliverMail, 90)
+b.addJoinHook(deliverMail, 90)
 
 def mail(e, bot):
     db = getdb()
@@ -564,13 +561,9 @@ def store_words(e, bot):
         db = getdb()
         c = db.cursor()
         words = e.msg.split()
-        for i in range(1, len(words)):
-            c.execute("INSERT INTO word_pairs (first, second) VALUES (?, ?)", (words[i-1], words[i]))
         for i in range(2, len(words)):
             c.execute("INSERT INTO word_triplets (first, second, third) VALUES (?, ?, ?)", (words[i-2], words[i-1], words[i]))
         if len(words) > 1:
-            c.execute("INSERT INTO word_pairs (second) VALUES (?)", (words[0],))
-            c.execute("INSERT INTO word_pairs (first) VALUES (?)", (words[-1],))
             c.execute("INSERT INTO word_triplets (second, third) VALUES (?,?)", (words[0], words[1]))
             c.execute("INSERT INTO word_triplets (first, second) VALUES (?,?)", (words[-2], words[-1]))
         db.commit()
@@ -585,11 +578,12 @@ def poemm(e, bot):
         fromscratch = False
         words = e.msg.split()[1:]
         if len(words) < 2:
-            c.execute("SELECT second FROM word_pairs WHERE first LIKE ? ORDER BY random() LIMIT 1", (words[-1],))
+            c.execute("SELECT second, third FROM word_triplets WHERE first LIKE ? AND second NOT NULL AND third NOT NULL ORDER BY random() LIMIT 1", (words[-1],))
             word = c.fetchone()
-            if word and word[0]:
-                wordcount += 1
+            if word:
+                wordcount += 2
                 words.append(word[0])
+                words.append(word[1])
             else:
                 c.execute("SELECT first, second, third FROM word_triplets WHERE first NOT NULL AND third NOT NULL ORDER BY random() LIMIT 1")
                 row = c.fetchone()
@@ -639,68 +633,85 @@ def batman(e, bot):
     bot.reply(e, "I'm the " + adjective()[1] + " Batman.")
 b.addCommandHook("batman", batman)
 
-def technothing(r=-1):
-    r += 1
-    if random.random() - r/10.0 > .4:
-        return random.choice((
-            technothing(r) + " detector",
-            technothing(r) + " provider",
-            technothing(r) + " scrambler",
-            "streaming " + technothing(r),
-            technothing(r) + " to " + technothing(r) + " adapter",
-            "USB " + technothing(r),
-            "internet " + technothing(r),
-            "web" + technothing(r),
-            "net" + technothing(r),
-            "femto" + technothing(r),
-            "techno" + technothing(r),
-            "virtual " + technothing(r),
-            "automated " + technothing(r),
-            technothing(r) + " generator",
-            technothing(r) + " " + technothing(r),
-        ))
-    else:
-        return random.choice((
-            "pony",
-            "HTML5",
-            "waveform",
-            "log",
-            "feet warmer",
-            "video camera",
-            "browser",
-            "OS",
-            "socket",
-            "player",
-            "screen",
-            "database",
-            "video",
-            "VGA",
-            "sound",
-            "internet",
-            "network",
-            "RSS",
-            "time",
-            "cookies",
-            "text processor",
-            "encoding",
-            "XML",
-            "CSS3",
-            "gopher",
-            "computer",
-            "keyboard",
-            "mouse",
-            "audio",
-            "screen",
-            "sims",
-            "port",
-            "memory",
-            "cell",
-            "youtube",
-            "facebook",
-            "twitter",
-            "tumblr",
-            "email"
-        ))
+def technothing():
+    thing = random.choice((
+        "%s detector",
+        "%s provider",
+        "%s scrambler",
+        "streaming %s",
+        "%s to %s adapter",
+        "USB %s",
+        "internet %s",
+        "web%s",
+        "net%s",
+        "femto%s",
+        "techno%s",
+        "virtual %s",
+        "automated %s",
+        "%s generator",
+        "%s %s",
+        "%s %s",
+        "%s %s",
+        "%s %s %s",
+        "%s%s",
+        "pony",
+        "HTML5",
+        "waveform",
+        "feet",
+        "%s warmer",
+        "PocketPC™"
+        "video",
+        "camera",
+        "browser",
+        "OS",
+        "socket",
+        "player",
+        "screen",
+        "database",
+        "video",
+        "VGA",
+        "sound",
+        "internet",
+        "network",
+        "RSS",
+        "time",
+        "cookies",
+        "text processor",
+        "encoding",
+        "XML",
+        "CSS3",
+        "gopher",
+        "data",
+        "computer",
+        "keyboard",
+        "mouse",
+        "audio",
+        "screen",
+        "sims",
+        "port",
+        "memory",
+        "cell",
+        "youtube",
+        "facebook",
+        "twitter",
+        "tumblr",
+        "friendster", #olol
+        "email",
+        "toaster",
+        "vegetable",
+        "granular %s",
+        "synthesis",
+        "database",
+        "%s log",
+        "%s reader",
+        "%s analyzer",
+        "cat",
+        "security"
+    ))
+    while "%s" in thing:
+        thing = thing.partition("%s") # ghetto string formatting :>
+        thing = thing[0] + technothing() + thing[2]
+    return thing
 
 def technoverb():
     return random.choice((
@@ -726,16 +737,16 @@ def technoverb():
     ))
 
 def techsupport(e, bot):
-    bot.reply(e, random.choice((
-        "Try to " + technoverb() + " your " + technothing() +".",
-        "You could probably " + technoverb() + " the " + technothing()+".",
-        "You could probably " + technoverb() + " the " + technothing()+".",
-        "I think your best bet would be to " + technoverb() + " your " + technothing()+".",
-        "It may fix it if you " + technoverb() + " the " + technothing() + ".",
-        "Does anything happen if you " + technoverb() + " the " + technothing() + "?",
-        "Don't ever " + technoverb() + " the " + technothing() + ". Things will break.",
-        "Just " + technoverb() + " your " + technothing() + ". It always works."
-        )))
+    e.reply(random.choice((
+        "Try to %s your %s.",
+        "You could probably %s the %s.",
+        "I think your best bet would be to %s your %s.",
+        "It may fix it if you %s the %s.",
+        "Does anything happen if you %s the %s?",
+        "Don't %s the %s. Things will break.",
+        "Don't ever %s the %s or bad things will happen.",
+        "Just %s your %s. It always works."
+        )) % (technoverb(), technothing()))
 b.addCommandHook("techsupport", techsupport)
 
 def feature(e, bot):
@@ -1006,8 +1017,11 @@ def seen(e, bot):
         e.reply("As far as I know, " + nick + " is just an urban legend.")
 b.addCommandHook("seen", seen, 90)
 
-i.recv()
-i.recv()
+def info(e, bot):
+    e.reply("Hello! I am a bot for EqBeats. My only useful command is !eqsearch. Blame codl for all this.")
+b.addCommandHook("eqbot", info, 0)
+b.addCommandHook("help", info, 90)
+
 i.recv()
 i.recv()
 i.recv()
@@ -1015,7 +1029,7 @@ i.recv()
 i.sendMsg("NickServ", "IDENTIFY FnkrfBPo9f-X")
 i.setMode("-x")
 if LIVE:
-    b.join("#eqbeats", 100)
+    b.join("#eqbeats", 90)
     b.join("#bronymusic", 70)
-    b.join("#saucisse", 90)
+    b.join("#eqbot", 100)
 b.run()
