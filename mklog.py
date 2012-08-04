@@ -207,7 +207,7 @@ for channel in CHANNELS:
         else:
             days[-1][1].write("LOL I FORGOT THIDS MESSAGR TYPOE")
             days[-1][2].write("LOL Y FORGIT THIS MESAGE TYPE" + e.msg + "\n")
-        days[-1][1].write("</div>")
+        days[-1][1].write("</div>\n")
     if len(days) > 0:
         days[-1][1].write("""
         </div>

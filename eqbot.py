@@ -304,12 +304,13 @@ def roll(e, bot):
                 msg += " " + str(res)
                 total += res
                 totaldice+=1
+                if totaldice >= 100:
+                    e.reply("Rolling a few handfuls of dice: Total: a few millions, maybe more")
+                    return
             bot.reply(e, msg)
             msg = "        "
         except LookupError:
             pass
-    if totaldice == 0:
-        bot.reply(e, "Rolling nothing. Total : 0")
     if totaldice > 1:
         bot.reply(e, "Total: " + str(total))
 b.addCommandHook("roll", roll, 50)
@@ -505,7 +506,7 @@ def mail(e, bot):
         bot.reply(e, "Syntax : !mail nick message")
         return
     nick = e.args[0]
-    msg = " ".join(e.msg.split(" "))[2:] # avoid collapsing whitespace
+    msg = " ".join(e.msg.split(" ")[2:]) # avoid collapsing whitespace
     private = (e.channel == None)
     c.execute("INSERT INTO mail (source, dest, private, msg, time) VALUES (?, ?, ?, ?, ?)", (e.sourceNick, nick, private, msg, time.time()))
     db.commit()
@@ -1021,6 +1022,13 @@ def info(e, bot):
     e.reply("Hello! I am a bot for EqBeats. My only useful command is !eqsearch. Blame codl for all this.")
 b.addCommandHook("eqbot", info, 0)
 b.addCommandHook("help", info, 90)
+
+def once(bot):
+    for channel in bot.channels:
+        if channel.level >= 90:
+            bot.sendMsg(channel.name, "once")
+    return random.randint(30, 172800) # 48h :D
+b.addTimeHook(random.randint(120, 172800), once)
 
 i.recv()
 i.recv()
