@@ -281,7 +281,7 @@ b.addCommandHook("choose", choice, 90)
 def newTracks(bot):
     for t in eqbeats.newTracks():
         for c in bot.channels:
-            if c.level > 90:
+            if c.level >= 90:
                 bot.sendMsg(c.name, "New track: " + eqbeats.ppTrack(t))
         bot.lastTid = str(t['id'])
     return 120
@@ -524,32 +524,29 @@ def mailbag(e, bot):
 b.addCommandHook("mailbag", mailbag, 90)
 b.addCommandHook("mailbox", mailbag, 90)
 
-lastmsgs = {}
-def s_pre(e, bot):
-    if e.type == irc.MSG and not re.search("^s(?P<delim>[^ \tA-Za-z]).*(?P=delim)", e.msg, flags=re.I):
-        if e.channel:
-            lastmsgs[e.channel] = "<" + e.sourceNick + "> " + e.msg
-        else:
-            lastmsgs[e.sourceNick] = "<" + e.sourceNick + "> " + e.msg
-    elif e.type == irc.ACTION:
-        if e.channel:
-            lastmsgs[e.channel] = "* " + e.sourceNick + " " + e.msg
-        else:
-            lastmsgs[e.sourceNick] = "* " + e.sourceNick + " " + e.msg
-b.addWildHook(s_pre, 0)
-
 def s(e, bot):
-    try:
-        if e.type == irc.MSG:
-            if e.channel: source = e.channel
-            else: source = e.sourceNick
-            args = e.msg.split(e.msg[1])
-            if len(args) >= 3:
-                msg = re.sub(args[1], args[2], lastmsgs[source])
-                lastmsgs[source] = msg
-                bot.reply(e, msg)
-    except KeyError:
-        pass
+    db = getdb()
+    c = db.cursor()
+    if e.type == irc.MSG:
+        if e.channel: source = e.channel
+        else: source = e.sourceNick
+        args = e.msg.split(e.msg[1])
+        print(args)
+        if len(args) >= 3:
+            c.execute("SELECT type, source, dest, msg, time FROM log WHERE dest LIKE ? AND time < ? ORDER BY time DESC LIMIT 100", (source, e.time))
+            for row in c:
+                text = None
+                e_ = irc.Event(*row)
+                if e_.type == irc.PRIVMSG and not re.match("s(?P<delim>[^ \tA-Za-z]).*(?P=delim)", e_.msg):
+                    if e_.nick == e.irc.nick and re.match("<.*>", e_.msg):
+                        text = e_.msg
+                    else:
+                        text = "<%s> %s" % (e_.nick, e_.msg)
+                elif e_.type == irc.ACTION:
+                    text = "* %s %s" % (e_.nick, e_.msg)
+                if text and re.search(args[1], text, flags=re.I):
+                    e.reply(re.sub(args[1], args[2], text, flags=re.I))
+                    return
 b.addRegexHook("^s(?P<delim>[^ \tA-Za-z]).*(?P=delim)", s, 70)
 
 def rand_track(e, bot):
@@ -1034,10 +1031,10 @@ i.recv()
 i.recv()
 i.recv()
 i.recv()
-i.sendMsg("NickServ", "IDENTIFY FnkrfBPo9f-X")
+i.sendMsg("NickServ", "IDENTIFY EqBot FnkrfBPo9f-X")
 i.setMode("-x")
+b.join("#eqbot", 100)
 if LIVE:
     b.join("#eqbeats", 90)
     b.join("#bronymusic", 70)
-    b.join("#eqbot", 100)
 b.run()

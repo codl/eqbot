@@ -12,6 +12,7 @@ CONNECTED = 2
 # event type constants
 PING = 1
 MSG = 2
+PRIVMSG = 2
 ACTION = 4
 NICK= 5
 MODECHANGE = 6
