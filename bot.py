@@ -76,10 +76,12 @@ class Bot:
         self.partHooks = []
         self.quitHooks = []
         self.outmsgHooks = []
+        self.ignoreHooks = []
         self.msgHooks = []
         self.prefix = "!"
         self.channels = []
         self.eventQueues = []
+        self.ignore = []
 
     def channel(self, channel):
         for c in self.channels:
@@ -99,6 +101,7 @@ class Bot:
         for i in range(len(self.channels)):
             if self.channels[i].name == channel:
                 del self.channels[i]
+                break
         self.irc.part(channel)
 
     def level(self, channel):
@@ -166,6 +169,12 @@ class Bot:
         if e.type == irc.MSG:
             def f(msg, hilight=False): self.reply(e, msg, hilight=hilight)
             e.reply = f
+        if e.nick and e.nick in self.ignore:
+            for hook in self.ignoreHooks:
+                if not e.channel or self.level(e.channel) >= hook.level:
+                    threading.Thread(target=hook.func, args=(e, self)).start()
+            return
+        if e.type == irc.MSG:
             for hook in self.msgHooks:
                 if not e.channel or self.level(e.channel) >= hook.level:
                     threading.Thread(target=hook.func, args=(e, self)).start()
@@ -235,6 +244,8 @@ class Bot:
         self.msgHooks += [Hook(f,level),]
     def addOutmsgHook(self, f, level=None):
         self.outmsgHooks += [Hook(f,level),]
+    def addIgnoreHook(self, f, level=None):
+        self.ignoreHooks += [Hook(f,level),]
 
     def addNoticeHook(self, f):
         self.noticeHooks += [f,]

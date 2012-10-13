@@ -22,7 +22,7 @@ def newTracks():
             else:
                 break
         seenTracks += newTracks
-    except (HTTPError, URLError):
+    except (HTTPError, URLError, UnicodeDecodeError):
         return []
     return reversed(newTracks)
 
@@ -32,9 +32,12 @@ def search(q):
     return tracks
 
 def track(id):
-    page = ur.urlopen("http://eqbeats.org/track/%s/json" % (id,))
-    track = json.loads(page.read().decode("UTF-8"))
-    return track
+    try:
+        page = ur.urlopen("http://eqbeats.org/track/%s/json" % (id,))
+        track = json.loads(page.read().decode("UTF-8"))
+        return track
+    except (HTTPError, URLError, UnicodeDecodeError):
+        return None
 
 def random():
     page = ur.urlopen("http://eqbeats.org/tracks/random/json")

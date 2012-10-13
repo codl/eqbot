@@ -153,7 +153,7 @@ class Irc:
             msg = msg.encode("UTF-8")
         if(isinstance(dest, str)):
             dest = dest.encode("UTF-8")
-        self._send(b"PRIVMSG " + dest + b" :" + msg.translate(bytes.maketrans(b"\n", b" "))) # same syntax for channels and users, yay :D
+        self._send(b"PRIVMSG " + dest + b" :" + msg.translate(bytes.maketrans(b"\n\r", b"  "))) # same syntax for channels and users, yay :D
 
     def setMode(self, mode):
         self._send("MODE " + self.nick + " " + mode)

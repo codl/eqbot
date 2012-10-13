@@ -28,9 +28,11 @@ b = bot.Bot(i)
 
 b.lastTid = None
 
+b.ignore = []
+
 b.userlevel = {}
 b.acc = {}
-b.ops = ["codl", "fmang"]
+b.ops = ["codl", "fmang", "Kipje"]
 OP = 1
 def fetchacc(user, bot = b):
     bot.sendMsg("NickServ", "acc " + user.partition("!")[0] + " *")
@@ -40,8 +42,7 @@ def fetchacc(user, bot = b):
             if args[0] == user.partition("!")[0] and args[3] == "ACC":
                 _, _, account, _, level = args[:5]
                 bot.acc[user] = account
-                if int(level) == 3:
-                    if account in bot.ops:
+                if int(level) == 3 and account in bot.ops:
                         bot.userlevel[user] = OP
                 else:
                     bot.userlevel[user] = 0
@@ -93,27 +94,30 @@ def clearauths(e, bot):
 b.addCommandHook("clearauths", clearauths, 0)
 
 def say(e, bot):
-    if auth(e.source) == OP:
-        words = e.msg.split()
-        if len(words) < 3:
-            bot.reply(e, "Usage : !say #channel message")
+    words = e.msg.split()
+    if len(words) < 3:
+        bot.reply(e, "Usage : !say #channel message")
+        if auth(e.source) == OP:
             bot.reply(e, "        !say nick message")
+        return
+    print(e.args)
+    if auth(e.source) == OP or e.args[0][0] in "#&":
+        if words[1].lower() == "chanserv" and words[2].lower() == "kick" and words[3].lower() == "#eqbeats":
+            e.reply("Do it yourself.")
         else:
-            if acc(e.source) == "fmang" and words[1].lower() == "chanserv" and words[2].lower() == "kick" and words[3].lower() == "#eqbeats":
-                e.reply("Do it yourself.")
-            else:
-                bot.sendMsg(words[1], " ".join(words[2:]))
-b.addCommandHook("say", say, 0)
+            bot.sendMsg(words[1], " ".join(words[2:]))
+b.addCommandHook("say", say, 100)
 
 def do(e, bot):
-    if auth(e.source) == OP:
-        words = e.msg.split()
-        if len(words) < 3:
-            bot.reply(e, "Usage : !do #channel action")
+    words = e.msg.split()
+    if len(words) < 3:
+        bot.reply(e, "Usage : !do #channel action")
+        if auth(e.source) == OP:
             bot.reply(e, "        !do nick action")
-        else:
-            bot.sendMsg(words[1], irc.action(" ".join(words[2:])))
-b.addCommandHook("do", do, 0)
+        return
+    if auth(e.source) == OP or e.args[0][0] in "#&":
+        bot.sendMsg(words[1], irc.action(" ".join(words[2:])))
+b.addCommandHook("do", do, 100)
 
 def nick(e, bot):
     if auth(e.source) == OP:
@@ -152,7 +156,8 @@ b.addCommandHook("channels", channels, 0)
 
 
 def fetchTitle(url):
-    page = ur.urlopen(ur.Request(url, headers={'User-Agent': "Mozilla/5.0"}))
+    page = ur.urlopen(ur.Request(url,
+        headers={'User-Agent': "Mozilla/5.0 Python-urllib/2.6 EqBot"}))
     enc = page.info().get("Content-Type").partition("=")[2]
     if enc == "": enc = "utf-8"
     try:
@@ -189,21 +194,26 @@ def plot(e, bot):
 b.addRegexHook("plot", plot, 90)
 
 def _search(e, bot, q):
-    if q.isdigit():
-        t = eqbeats.track(q)
+    try: 
+        id = int(q)
+        t = eqbeats.track(id)
         if t:
             e.reply(eqbeats.ppTrack(t))
+            bot.lastTid = str(id)
             return
-    if not q == "":
-        tracks = eqbeats.search(q)[:3]
-        for t in tracks[:2]:
-            bot.reply(e, eqbeats.ppTrack(t))
-        if len(tracks) == 0:
-            bot.reply(e, "no tracks found.")
-        elif len(tracks) == 1:
-            bot.lastTid = str(tracks[0]['id'])
-        elif len(tracks) == 3:
-            bot.reply(e, "and more at http://eqbeats.org/tracks/search?%s" % up.urlencode({'q': q}))
+        else:
+            e.reply("No tracks found.")
+    except ValueError:
+        if not q == "":
+            tracks = eqbeats.search(q)[:3]
+            for t in tracks[:2]:
+                bot.reply(e, eqbeats.ppTrack(t))
+            if len(tracks) == 0:
+                bot.reply(e, "No tracks found.")
+            elif len(tracks) == 1:
+                bot.lastTid = str(tracks[0]['id'])
+            elif len(tracks) == 3:
+                bot.reply(e, "and more at http://eqbeats.org/tracks/search?%s" % up.urlencode({'q': q}))
 
 def regexsearch(e, bot):
     _search(e, bot, e.groups[0])
@@ -298,6 +308,9 @@ def roll(e, bot):
             num, sides = int(spec[0]), int(spec[1])
             if num == 0:
                 continue
+            if sides >= 100:
+                e.reply("That die is way too big. I can't even lift it.")
+                return
             msg += str(num) + " " + str(sides) + "-sided di" + ("ce" if num > 1 else "e") + ":"
             for i in range(num):
                 res = random.randint(1, sides)
@@ -531,7 +544,6 @@ def s(e, bot):
         if e.channel: source = e.channel
         else: source = e.sourceNick
         args = e.msg.split(e.msg[1])
-        print(args)
         if len(args) >= 3:
             c.execute("SELECT type, source, dest, msg, time FROM log WHERE dest LIKE ? AND time < ? ORDER BY time DESC LIMIT 100", (source, e.time))
             for row in c:
@@ -850,19 +862,19 @@ def _stalk(inick, bot):
     if host:
         hosts[host] = 1
     print(hosts)
-    for _ in range(3):
+    for depth in range(1, 4):
         for host in hosts.keys():
             c.execute("SELECT nick, count FROM nick_host WHERE host = ?", (host,))
             for nick, count in c:
                 try:
-                    nicks[nick] = nicks[nick] + hosts[host] * count
+                    nicks[nick] = nicks[nick] + int(hosts[host] * count / (depth ** 3) )
                 except KeyError:
                     nicks[nick] = count
         for nick in nicks.keys():
             c.execute("SELECT host, count FROM nick_host WHERE nick = ?", (nick,))
             for host, count in c:
                 try:
-                    hosts[host] = hosts[host] + nicks[nick] * count
+                    hosts[host] = hosts[host] + int(nicks[nick] * count / (depth ** 3) )
                 except KeyError:
                     hosts[host] = count
         print(nicks)
@@ -925,6 +937,7 @@ def log(e, bot):
         db.commit()
 b.addWildHook(log, 30)
 b.addOutmsgHook(log, 30)
+b.addIgnoreHook(log, 30)
 
 def whatis(e, bot):
     if len(e.args) == 0:
