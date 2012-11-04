@@ -14,8 +14,8 @@ PING = 1
 MSG = 2
 PRIVMSG = 2
 ACTION = 4
-NICK= 5
-MODECHANGE = 6
+NICK = 5
+MODE = 6
 KICK = 7
 JOIN = 8
 PART = 9
@@ -23,6 +23,7 @@ QUIT = 10
 TOPIC = 13
 NOTICE = 11
 ERROR = 12
+
 OTHER = 0
 
 # errors
@@ -131,7 +132,11 @@ class Irc:
             elif args[1] == "NOTICE":
                 return Event(NOTICE, source=args[0][1:], msg=" ".join(args[3:])[1:-1], irc=self)
             elif args[1] == "TOPIC":
-                return Event(TOPIC, source=args[0][1:], dest=args[2], msg=" ".join(args[3:])[1:-1], irc=self)
+                return Event(TOPIC, source=args[0][1:], channel=args[2], msg=" ".join(args[3:])[1:-1], irc=self)
+            elif args[1] == "KICK":
+                return Event(KICK, source=args[0][1:], channel=args[2], dest=args[3], msg=" ".join(args[4:])[1:-1], irc=self)
+            elif args[1] == "MODE":
+                return Event(MODE, source=args[0][1:], channel=args[2], msg=" ".join(args[3:])[1:-1], irc=self)
             #TODO parse more events
             else:
                 return Event(OTHER, irc=self, msg=data)

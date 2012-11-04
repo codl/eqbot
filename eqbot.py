@@ -32,7 +32,7 @@ b.ignore = []
 
 b.userlevel = {}
 b.acc = {}
-b.ops = ["codl", "fmang", "Kipje"]
+b.ops = ["codl", "fmang", "Kipje", "sci"]
 OP = 1
 def fetchacc(user, bot = b):
     bot.sendMsg("NickServ", "acc " + user.partition("!")[0] + " *")
@@ -228,51 +228,57 @@ def flipcoin(e, bot):
 b.addCommandHook("flipcoin", flipcoin)
 
 
-
 flipmap = str.maketrans("!'(.∴<?‿⁅[_acbedgfihkjmnrtwvy{¡,)˙∵>¿⁀⁆]‾ɐɔqǝpƃɟıɥʞɾɯuɹʇʍʌʎ}lן697Ɫᔭ43Ɛ¯", "¡,)˙∵>¿⁀⁆]‾ɐɔqǝpƃɟıɥʞɾɯuɹʇʍʌʎ}!'(.∴<?‿⁅[_acbedgfihkjmnrtwvy{ןl96Ɫ74ᔭƐ3_")
-def flip(e, bot):
+def flip(e, bot, flip="flip"):
     if len(e.args) == 0:
         e.reply(irc.action(random.choice((
-            "flips a table (╯°□°)╯︵ ┻━┻",
-            "flips a table (╯°□°)╯︵ ┻━┻",
-            "flips a table ┻━┻ ︵╰(°□°╰)",
-            "flips a table ┻━┻ ︵╰(°□°╰)",
-            "flips some tables ┻━┻ ︵╰(°□°)╯︵ ┻━┻",
-            "flips a chair (╯°□°)╯︵ =|_",
-            "flips a chair _|= ︵╰(°□°╰)",
-            "flips some chairs _|= ︵╰(°□°)╯︵ =|_"
+            flip + "s a table (╯°□°)╯︵ ┻━┻",
+            flip + "s a table (╯°□°)╯︵ ┻━┻",
+            flip + "s a table ┻━┻ ︵╰(°□°╰)",
+            flip + "s a table ┻━┻ ︵╰(°□°╰)",
+            flip + "s some tables ┻━┻ ︵╰(°□°)╯︵ ┻━┻",
+            flip + "s a chair (╯°□°)╯︵ =|_",
+            flip + "s a chair _|= ︵╰(°□°╰)",
+            flip + "s some chairs _|= ︵╰(°□°)╯︵ =|_"
             ))))
     elif e.args[0] == "table":
         e.reply(irc.action(random.choice((
-            "flips a table (╯°□°)╯︵ ┻━┻",
-            "flips a table ┻━┻ ︵╰(°□°╰)",
+            flip + "s a table (╯°□°)╯︵ ┻━┻",
+            flip + "s a table ┻━┻ ︵╰(°□°╰)",
             ))))
     elif e.args[0] == "tables":
         e.reply(irc.action(
-            "flips some tables ┻━┻ ︵╰(°□°)╯︵ ┻━┻"
+            flip + "s some tables ┻━┻ ︵╰(°□°)╯︵ ┻━┻"
             ))
     elif e.args[0] == "chair":
         e.reply(irc.action(random.choice((
-            "flips a chair (╯°□°)╯︵ =|_",
-            "flips a chair _|= ︵╰(°□°╰)",
+            flip + "s a chair (╯°□°)╯︵ =|_",
+            flip + "s a chair _|= ︵╰(°□°╰)",
             ))))
     elif e.args[0] == "chairs":
         e.reply(irc.action(
-            "flips some chairs _|= ︵╰(°□°)╯︵ =|_"
+            flip + "s some chairs _|= ︵╰(°□°)╯︵ =|_"
             ))
     elif e.args[0] == "back":
-        backflip(e, bot)
+        if flip == "flop":
+            backflop(e, bot)
+        else:
+            backflip(e, bot)
     else:
         flipped = list(" ".join(e.args).lower().translate(flipmap))
         flipped.reverse()
         flipped = "".join(flipped)
         e.reply(irc.action(
-            "flips " +
+            flip + "s " +
             ("an" if e.args[0][0] in "aeiouAEIOU" else "a") + " " +
             " ".join(e.args) + " " +
             "(╯°□°)╯︵ " + flipped
             ))
 b.addCommandHook("flip", flip, 70)
+
+def flop(e, bot):
+    flip(e, bot, "flop")
+b.addCommandHook("flop", flop, 70)
 
 def choice(e, bot):
     choices = e.msg.split(" or ")
@@ -935,6 +941,28 @@ def log(e, bot):
             except (ValueError, AttributeError):
                 pass
         db.commit()
+
+    # plaintext is delicious
+    """ 
+    if e.type == irc.MSG:
+        days[-1][2].write("<" + e.nick + "> " + stripcolor(e.msg) + "\n")
+    elif e.type == irc.ACTION:
+        days[-1][2].write("* " + e.nick + " " + stripcolor(e.msg) + "\n")
+    elif e.type == irc.JOIN:
+        days[-1][2].write("> " + e.nick + " joined " + e.channel + "\n")
+    elif e.type == irc.PART:
+        days[-1][2].write("< " + e.nick + " left " + e.channel + "\n")
+    elif e.type == irc.QUIT:
+        days[-1][2].write("< " + e.nick + " quit IRC : " + e.msg + "\n")
+    elif e.type == irc.NICK:
+        days[-1][2].write(e.msg + " is now " + e.nick + "\n")
+    elif e.type == irc.TOPIC:
+        days[-1][2].write(e.nick + " has changed the topic to: " + e.msg + "\n")
+    elif e.type == irc.KICK:
+        days[-1][2].write(e.nick + " has changed the topic to: " + e.msg + "\n")
+    else:
+        days[-1][2].write("LOL Y FORGIT THIS MESAGE TYPE" + e.msg + "\n")
+    """
 b.addWildHook(log, 30)
 b.addOutmsgHook(log, 30)
 b.addIgnoreHook(log, 30)
@@ -952,7 +980,7 @@ def whatis(e, bot):
         e.reply(row[0]  + " " + row[1])
     else:
         verb = "are" if e.msg.split()[0][-3:] == "are" else "is"
-        e.reply(thing + " " + verb + " nothing.")
+        e.reply(thing + " " + verb + random.choice((" YOUR MOM", " YOUR FACE", " THE REASON YOU SUCK", " NOTHING ANYONE CARES ABOUT", " FUCK YOUR !WHATIS", " ADOPTED", " GOD'S MISTAKE", " AN ABOMINATION OF THIS EARTH", " BAD AND YOU SHOULD FEEL BAD", " A SINGULARITY OF SELF-DEPRECIATION", " A DIRTY COMMUNIST", " CURRENTLY IN THERAPY BECAUSE OF YOU", " NOT INTERESTED, STOP CALLING", " NOT WORTH ANYONE'S TIME", " a butt fart")))
 b.addCommandHook("whatis", whatis, 70)
 b.addCommandHook("whois", whatis, 70)
 b.addCommandHook("whatare", whatis, 70)
