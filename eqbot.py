@@ -217,7 +217,7 @@ def _search(e, bot, q):
 
 def regexsearch(e, bot):
     _search(e, bot, e.groups[0])
-b.addRegexHook("^\?([^ \t].*)$", regexsearch, 90)
+b.addRegexHook("^\?([^ \t!?].*)$", regexsearch, 90)
 
 def cmdsearch(e, bot):
     _search(e, bot, " ".join(e.msg.split()[1:]))
