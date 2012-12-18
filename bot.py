@@ -182,8 +182,9 @@ class Bot:
                 if not e.channel or self.level(e.channel) >= hook[1].level:
                     match = hook[0].search(e.msg)
                     if match:
-                        e_ = copy.deepcopy(e)
+                        e_ = irc.Event(e.type, e.source, e.dest, e.msg, e.time, e.irc, e.channel)
                         e_.groups = match.groups()
+                        e_.reply = f
                         threading.Thread(target=hook[1].func, args=(e_, self)).start()
             if not e.channel:
                 try:

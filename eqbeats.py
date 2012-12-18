@@ -4,14 +4,14 @@ import urllib.parse as up
 from urllib.error import HTTPError, URLError
 
 def ppTrack(t):
-    return t['title'] + " by " + t['artist']['name'] + " http://eqbeats.org/track/" + str(t['id']) + ""
+    return t['title'] + " by " + t['artist']['name'] + " https://eqbeats.org/track/" + str(t['id']) + ""
 
 seenTracks = []
 def newTracks():
     global seenTracks
     newTracks = []
     try:
-        page = ur.urlopen("http://eqbeats.org/tracks/latest/json")
+        page = ur.urlopen("https://eqbeats.org/tracks/latest/json")
         tracks = json.loads(page.read().decode("UTF-8"))
         if seenTracks == []:
             seenTracks = [t['id'] for t in tracks]
@@ -27,19 +27,19 @@ def newTracks():
     return reversed(newTracks)
 
 def search(q):
-    page = ur.urlopen("http://eqbeats.org/tracks/search/json?%s" % up.urlencode({'q': q}))
+    page = ur.urlopen("https://eqbeats.org/tracks/search/json?%s" % up.urlencode({'q': q}))
     tracks = json.loads(page.read().decode("UTF-8"))
     return tracks
 
 def track(id):
     try:
-        page = ur.urlopen("http://eqbeats.org/track/%s/json" % (id,))
+        page = ur.urlopen("https://eqbeats.org/track/%s/json" % (id,))
         track = json.loads(page.read().decode("UTF-8"))
         return track
     except (HTTPError, URLError, UnicodeDecodeError):
         return None
 
 def random():
-    page = ur.urlopen("http://eqbeats.org/tracks/random/json")
+    page = ur.urlopen("https://eqbeats.org/tracks/random/json")
     tracks = json.loads(page.read().decode("UTF-8"))
     return tracks[0]

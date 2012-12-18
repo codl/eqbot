@@ -28,11 +28,11 @@ b = bot.Bot(i)
 
 b.lastTid = None
 
-b.ignore = []
+b.ignore = ["DIVINE_JUDGEMENT", "Seraphim"]
 
 b.userlevel = {}
 b.acc = {}
-b.ops = ["codl", "fmang", "Kipje", "sci"]
+b.ops = ["codl", "fmang", "Kipje", "sci", "Valodim"]
 OP = 1
 def fetchacc(user, bot = b):
     bot.sendMsg("NickServ", "acc " + user.partition("!")[0] + " *")
@@ -100,7 +100,6 @@ def say(e, bot):
         if auth(e.source) == OP:
             bot.reply(e, "        !say nick message")
         return
-    print(e.args)
     if auth(e.source) == OP or e.args[0][0] in "#&":
         if words[1].lower() == "chanserv" and words[2].lower() == "kick" and words[3].lower() == "#eqbeats":
             e.reply("Do it yourself.")
@@ -213,7 +212,7 @@ def _search(e, bot, q):
             elif len(tracks) == 1:
                 bot.lastTid = str(tracks[0]['id'])
             elif len(tracks) == 3:
-                bot.reply(e, "and more at http://eqbeats.org/tracks/search?%s" % up.urlencode({'q': q}))
+                bot.reply(e, "and more at https://eqbeats.org/tracks/search?%s" % up.urlencode({'q': q}))
 
 def regexsearch(e, bot):
     _search(e, bot, e.groups[0])
@@ -228,7 +227,8 @@ def flipcoin(e, bot):
 b.addCommandHook("flipcoin", flipcoin)
 
 
-flipmap = str.maketrans("!'(.∴<?‿⁅[_acbedgfihkjmnrtwvy{¡,)˙∵>¿⁀⁆]‾ɐɔqǝpƃɟıɥʞɾɯuɹʇʍʌʎ}lן697Ɫᔭ43Ɛ¯", "¡,)˙∵>¿⁀⁆]‾ɐɔqǝpƃɟıɥʞɾɯuɹʇʍʌʎ}!'(.∴<?‿⁅[_acbedgfihkjmnrtwvy{ןl96Ɫ74ᔭƐ3_")
+flipmap = str.maketrans("!'(.∴<?‿⁅[_acbedgfihkjmnrtwvy{¡,)˙∵>¿⁀⁆]‾ɐɔqǝpƃɟıɥʞɾɯuɹʇʍʌʎ}lן697Ɫᔭ43Ɛ¯ɓ/⁄\\", 
+        "¡,)˙∵>¿⁀⁆]‾ɐɔqǝpƃɟıɥʞɾɯuɹʇʍʌʎ}!'(.∴<?‿⁅[_acbedgfihkjmnrtwvy{ןl96Ɫ74ᔭƐ3_g\\\\/")
 def flip(e, bot, flip="flip"):
     if len(e.args) == 0:
         e.reply(irc.action(random.choice((
@@ -315,7 +315,7 @@ def roll(e, bot):
             if num == 0:
                 continue
             if sides >= 100:
-                e.reply("That die is way too big. I can't even lift it.")
+                e.reply("That die is way too big. How do you expect me to even lift it?")
                 return
             msg += str(num) + " " + str(sides) + "-sided di" + ("ce" if num > 1 else "e") + ":"
             for i in range(num):
@@ -555,7 +555,7 @@ def s(e, bot):
             for row in c:
                 text = None
                 e_ = irc.Event(*row)
-                if e_.type == irc.PRIVMSG and not re.match("s(?P<delim>[^ \tA-Za-z]).*(?P=delim)", e_.msg):
+                if e_.type == irc.PRIVMSG and not re.match("s(?P<delim>[^ \tA-Za-z0-9]).*(?P=delim)", e_.msg):
                     if e_.nick == e.irc.nick and re.match("<.*>", e_.msg):
                         text = e_.msg
                     else:
@@ -565,7 +565,7 @@ def s(e, bot):
                 if text and re.search(args[1], text, flags=re.I):
                     e.reply(re.sub(args[1], args[2], text, flags=re.I))
                     return
-b.addRegexHook("^s(?P<delim>[^ \tA-Za-z]).*(?P=delim)", s, 70)
+b.addRegexHook("^s(?P<delim>[^ \tA-Za-z0-9]).*(?P=delim)", s, 70)
 
 def rand_track(e, bot):
     bot.reply(e, eqbeats.ppTrack(eqbeats.random()))
@@ -769,7 +769,6 @@ def feature(e, bot):
     if auth(e.source) == OP:
         tids = e.msg.split()[1:]
         if len(tids) == 0 and bot.lastTid:
-            print(repr(bot.lastTid))
             tids = (bot.lastTid,)
         for tid in tids:
             try:
@@ -783,7 +782,7 @@ b.addCommandHook("fqueue", feature, 0)
 
 def fetchTid(e, bot):
     bot.lastTid = e.groups[0]
-b.addRegexHook("http://(?:www\\.)?eqbeats\\.org/track/([0-9]+)", fetchTid)
+b.addRegexHook("https?://(?:www\\.)?eqbeats\\.org/track/([0-9]+)", fetchTid)
 
 def debug_tid(e, bot):
     if auth(e.source) == OP:
@@ -1068,14 +1067,36 @@ def once(bot):
     return random.randint(30, 172800) # 48h :D
 b.addTimeHook(random.randint(120, 172800), once)
 
+def fun(e, bot):
+    e.reply("Fun!")
+b.addCommandHook("fun", fun, 70)
+
+funcount=0
+
+def fun_(e, bot):
+    global funcount
+    if funcount < 5:
+        e.reply("Fun!")
+        funcount += 1
+b.addRegexHook("^fun[! ]*$", fun_, 70)
+
+def funreset(bot):
+    global funcount
+    if funcount > 0:
+        funcount -= 1
+    return 20
+b.addTimeHook(20, funreset)
+
 i.recv()
 i.recv()
 i.recv()
 i.recv()
-i.sendMsg("NickServ", "IDENTIFY EqBot FnkrfBPo9f-X")
+if os.getenv("NICKSERV_PASSWORD"):
+    i.sendMsg("NickServ", "IDENTIFY EqBot %s" % os.getenv("NICKSERV_PASSWORD"))
 i.setMode("-x")
 b.join("#eqbot", 100)
 if LIVE:
     b.join("#eqbeats", 90)
     b.join("#bronymusic", 70)
+    b.join("#lastman", 80)
 b.run()
