@@ -645,6 +645,10 @@ def dundundun(e, bot):
     bot.reply(e, "DUN DUN DUUUN")
 b.addRegexHook("or[\. ]+(is|am|are|was|were|will|do|does|did|can|could|should|shall)[\. ]+(I|he|she|it|you|they|we)[ ?!]*$", dundundun, 70)
 
+def parensdundundun(e, bot):
+    bot.reply(e, "(dun dun duuun)")
+b.addRegexHook("\(or\)[\. ]+(is|am|are|was|were|will|do|does|did|can|could|should|shall)[\. ]+(I|he|she|it|you|they|we)[ ?!]*$", dundundun, 70)
+
 def batman(e, bot):
     bot.reply(e, "I'm the " + adjective()[1] + " Batman.")
 b.addCommandHook("batman", batman)
@@ -866,7 +870,6 @@ def _stalk(inick, bot):
     hosts = {}
     if host:
         hosts[host] = 1
-    print(hosts)
     for depth in range(1, 4):
         for host in hosts.keys():
             c.execute("SELECT nick, count FROM nick_host WHERE host = ?", (host,))
@@ -882,8 +885,6 @@ def _stalk(inick, bot):
                     hosts[host] = hosts[host] + int(nicks[nick] * count / (depth ** 3) )
                 except KeyError:
                     hosts[host] = count
-        print(nicks)
-        print(hosts)
     topnicks = []
     maxcount = 0
     for nick, count in nicks.items():
@@ -1098,5 +1099,4 @@ b.join("#eqbot", 100)
 if LIVE:
     b.join("#eqbeats", 90)
     b.join("#bronymusic", 70)
-    b.join("#lastman", 80)
 b.run()
