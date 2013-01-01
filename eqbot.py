@@ -643,12 +643,12 @@ b.addCommandHook("poem", poemm)
 
 def dundundun(e, bot):
     bot.reply(e, "DUN DUN DUUUN")
-b.addRegexHook("or[\. ]+(is|am|are|was|were|will|do|does|did|can|could|should|shall)[\. ]+(I|he|she|it|you|they|we)[ ?!]*$", dundundun, 70)
+b.addRegexHook("or[\. ]+(is|am|are|was|were|will|do|does|did|can|could|should|shall|would)[\. ]+(I|he|she|it|you|they|we)[ ?!]*$", dundundun, 70)
 
 def parensdundundun(e, bot):
     bot.reply(e, "(dun dun duuun)")
-b.addRegexHook("\(or\)[\. ]+(is|am|are|was|were|will|do|does|did|can|could|should|shall)[\. ]+(I|he|she|it|you|they|we)[ ?!]*$", parensdundundun, 70)
-b.addRegexHook("\(or[\. ]+(is|am|are|was|were|will|do|does|did|can|could|should|shall)[\. ]+(I|he|she|it|you|they|we)[ ?!]*\)$", parensdundundun, 70)
+b.addRegexHook("\(or\)[\. ]+(is|am|are|was|were|will|do|does|did|can|could|should|shall|would)[\. ]+(I|he|she|it|you|they|we)[ ?!]*$", parensdundundun, 70)
+b.addRegexHook("\(or[\. ]+(is|am|are|was|were|will|do|does|did|can|could|should|shall|would)[\. ]+(I|he|she|it|you|they|we)[ ?!]*\)$", parensdundundun, 70)
 
 def batman(e, bot):
     bot.reply(e, "I'm the " + adjective()[1] + " Batman.")
