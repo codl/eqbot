@@ -155,12 +155,12 @@ b.addCommandHook("channels", channels, 0)
 
 
 def fetchTitle(url):
-    page = ur.urlopen(ur.Request(url,
+    page = ur.urlopen(ur.Request(url, data=None,
         headers={'User-Agent': "Mozilla/5.0 Python-urllib/2.6 EqBot"}))
     enc = page.info().get("Content-Type").partition("=")[2]
     if enc == "": enc = "utf-8"
     try:
-        return " ".join(HTMLParser.unescape(HTMLParser, re.search(b"<title>(.*?)</title>", page.read().translate(None,b"\n\r\t"), flags = re.I | re.M).expand(b"\\1").decode("utf-8")).split())
+        return " ".join(HTMLParser.unescape(HTMLParser, re.search(b"<title>(.*?)</title>", page.read(1000).translate(None,b"\n\r\t"), flags = re.I | re.M).expand(b"\\1").decode("utf-8")).split())
         #return HTMLParser.unescape(HTMLParser, re.search("<title>(.*)</title>", page.read().decode(enc), re.I).expand("\\1"))
     except (AttributeError, HTTPError, URLError):
         return None
