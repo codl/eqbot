@@ -779,7 +779,6 @@ def feature(e, bot):
             try:
                 int(tid)
                 bot.reply(e, os.popen("sudo -u eqbeats-pub EQBEATS_DIR=/srv/eqbeats/ /srv/eqbeats/tools/fqueue " + tid + " 2>&1").read())
-                #bot.reply(e, os.popen("echo " + tid).read())
             except (TypeError, ValueError):
                 break
 b.addCommandHook("feature", feature, 0)
