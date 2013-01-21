@@ -1099,4 +1099,5 @@ b.join("#eqbot", 100)
 if LIVE:
     b.join("#eqbeats", 90)
     b.join("#bronymusic", 70)
+    b.join("#toastbeard", 70)
 b.run()
