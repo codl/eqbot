@@ -134,7 +134,7 @@ class Bot:
         return Whois(nick, self)
 
     def processOutQueue(self):
-        delay = 0.3
+        delay = 0.01
         while True:
             try:
                 msg = self.msgQueue.pop(0)
@@ -147,11 +147,12 @@ class Bot:
                     threading.Thread(target=hook.func, args=(e, self)).start()
                 self.irc.sendMsg(*msg)
                 time.sleep(delay)
+                print(delay)
                 delay *= 1.5
-                if delay > 5: delay = 5
+                if delay > 1: delay = 1
             except IndexError:
-                time.sleep(0.3)
-                delay = 0.3
+                time.sleep(0.1)
+                delay = 0.1
 
     def eventLoop(self):
         queue = []

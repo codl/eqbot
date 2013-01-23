@@ -17,7 +17,7 @@ import os
 LIVE = False
 
 i = irc.Irc("irc.ponychat.net")
-i.setNick("EqBot_")
+i.setNick("EqB0t")
 if len(sys.argv) > 1 and sys.argv[1] == "live":
     i.setNick("EqBot")
     LIVE = True
@@ -1087,6 +1087,11 @@ def funreset(bot):
         funcount -= 1
     return 20
 b.addTimeHook(20, funreset)
+
+def shotgun(e, bot):
+    for i in range(100):
+        e.reply("BLAM"*i)
+b.addCommandHook("shotgun", shotgun, 100)
 
 i.recv()
 i.recv()
