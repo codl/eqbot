@@ -147,7 +147,6 @@ class Bot:
                     threading.Thread(target=hook.func, args=(e, self)).start()
                 self.irc.sendMsg(*msg)
                 time.sleep(delay)
-                print(delay)
                 delay *= 1.5
                 if delay > 1: delay = 1
             except IndexError:
