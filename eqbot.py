@@ -1088,11 +1088,6 @@ def funreset(bot):
     return 20
 b.addTimeHook(20, funreset)
 
-def shotgun(e, bot):
-    for i in range(100):
-        e.reply("BLAM"*i)
-b.addCommandHook("shotgun", shotgun, 100)
-
 i.recv()
 i.recv()
 i.recv()
