@@ -30,6 +30,7 @@ OTHER = 0
 ERR_ERRONEOUSNICK = 432
 ERR_NICKALREADYINUSE = 433
 ERR_CANNOTJOIN = 474 # is it only for bans?
+ERR_CANNOTSEND = 404 # channel has not been joined and has -n
 
 def action(msg):
     if(isinstance(msg, str)):

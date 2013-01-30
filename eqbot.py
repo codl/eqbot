@@ -12,6 +12,7 @@ from urllib.error import HTTPError, URLError
 from html.parser import HTMLParser
 import sys
 import sqlite3
+import json
 import os
 
 LIVE = False
@@ -572,72 +573,61 @@ def rand_track(e, bot):
 b.addCommandHook("random", rand_track, 90)
 b.addCommandHook("rand", rand_track, 90)
 
+triplets = dict()
+startingwords = list()
+dumptimer = 10
+try:
+    f = open("triplets.json", "r")
+    triplets, startingwords = json.load(f)
+    f.close()
+except OSError:
+    print("Cannot open triplets.json for reading")
+def tripletadd(left, right):
+    global dumptimer
+    left = left.lower()
+    if left in triplets:
+        triplets[left].append(right);
+    else:
+        triplets[left]= [right];
+    dumptimer -= 1
+    if dumptimer == 0:
+        dumptimer = 50
+        try:
+            f = open("triplets.json", "w")
+            json.dump([triplets, startingwords], f)
+            f.close()
+        except OSError:
+            print("Cannot open triplets.json for writing")
+
+def tripletget(left):
+    left = left.lower()
+    if left not in triplets:
+        return ""
+    return random.choice(triplets[left])
+
 def store_words(e, bot):
     if e.type == irc.MSG:
         db = getdb()
         c = db.cursor()
         words = e.msg.split()
         for i in range(2, len(words)):
-            c.execute("INSERT INTO word_triplets (first, second, third) VALUES (?, ?, ?)", (words[i-2], words[i-1], words[i]))
+            tripletadd(words[i-2] + " " + words[i-1], words[i])
         if len(words) > 1:
-            c.execute("INSERT INTO word_triplets (second, third) VALUES (?,?)", (words[0], words[1]))
-            c.execute("INSERT INTO word_triplets (first, second) VALUES (?,?)", (words[-2], words[-1]))
+            tripletadd(words[0], words[1])
+            tripletadd(words[-2] + " " + words[-1], "")
+            startingwords.append(words[0])
         db.commit()
 b.addWildHook(store_words, 0)
 
 def poemm(e, bot):
-    db = getdb()
-    c = db.cursor()
-    words = []
-    wordcount = 0
-    if len(e.msg.split()) > 1:
-        fromscratch = False
-        words = e.msg.split()[1:]
-        if len(words) < 2:
-            c.execute("SELECT second, third FROM word_triplets WHERE first LIKE ? AND second NOT NULL AND third NOT NULL ORDER BY random() LIMIT 1", (words[-1],))
-            word = c.fetchone()
-            if word:
-                wordcount += 2
-                words.append(word[0])
-                words.append(word[1])
-            else:
-                c.execute("SELECT first, second, third FROM word_triplets WHERE first NOT NULL AND third NOT NULL ORDER BY random() LIMIT 1")
-                row = c.fetchone()
-                words.append(row[0])
-                words.append(row[1])
-                words.append(row[2])
-                wordcount += 3
-    else:
-        fromscratch = True
-        c.execute("SELECT second, third FROM word_triplets WHERE first IS NULL ORDER BY random() LIMIT 1")
-        row = c.fetchone()
-        if row:
-            words = [row[0], row[1]]
-    while words[-1] != None:
-        c.execute("SELECT third FROM word_triplets WHERE first LIKE ? AND second LIKE ? AND third NOT NULL ORDER BY random() LIMIT 1", (words[-2], words[-1]))
-        word = c.fetchone()
-        if word:
-            wordcount += 2
-            words.append(word[0])
-        else:
-            c.execute("SELECT second, third FROM word_triplets WHERE first LIKE ? AND third ORDER BY random() LIMIT 1", (words[-1],))
-            triplet = c.fetchone()
-            if triplet:
-                wordcount += 2
-                words.append(triplet[0])
-                words.append(triplet[1])
-            else: break
-    if wordcount == 0:
-        if fromscratch and random.random() > .5:
-            poemm(e, bot)
-        else:
-            bot.reply(e, "I'm out of inspiration, sorry.")
-    else:
-        if words[-1] == None: words = words[:-1]
-        msg = " ".join(words)
-        bot.reply(e, msg)
-        if e.channel:
-            lastmsgs[e.channel] = "<" + i.nick + "> " + msg
+    words = e.msg.split()[1:]
+    if len(words) == 0:
+        words.append(random.choice(startingwords))
+    while len(words) == 0 or words[-1] != "":
+        words.append(tripletget(" ".join(words[-2:])))
+    if words[-1] == "": words = words[:-1]
+    msg = " ".join(words)
+    bot.reply(e, msg)
 b.addCommandHook("chain", poemm)
 b.addCommandHook("poem", poemm)
 
@@ -848,64 +838,6 @@ b.addRegexHook("[^ \\t]==", getvalue, 90)
 def sadtrombone(e, bot):
     bot.reply(e, "http://www.sadtrombone.com/")
 b.addCommandHook("sadtrombone", sadtrombone, 70)
-
-def stalk_track(e, bot):
-    db = getdb()
-    c = db.cursor()
-    c.execute("SELECT 1 FROM nick_host WHERE nick = ? AND host = ?", (e.sourceNick, e.host))
-    if c.fetchone():
-        c.execute("UPDATE nick_host SET count = count +1 WHERE nick = ? AND host = ?", (e.sourceNick, e.host))
-    else:
-        c.execute("INSERT INTO nick_host (nick, host) VALUES (?, ?)", (e.sourceNick, e.host))
-    db.commit()
-b.addMsgHook(stalk_track, 30)
-b.addJoinHook(stalk_track, 30)
-b.addNickHook(stalk_track)
-
-def _stalk(inick, bot):
-    db = getdb()
-    c = db.cursor()
-    host = bot.whois(inick).host
-    nicks = {inick:1}
-    hosts = {}
-    if host:
-        hosts[host] = 1
-    for depth in range(1, 4):
-        for host in hosts.keys():
-            c.execute("SELECT nick, count FROM nick_host WHERE host = ?", (host,))
-            for nick, count in c:
-                try:
-                    nicks[nick] = nicks[nick] + int(hosts[host] * count / (depth ** 3) )
-                except KeyError:
-                    nicks[nick] = count
-        for nick in nicks.keys():
-            c.execute("SELECT host, count FROM nick_host WHERE nick = ?", (nick,))
-            for host, count in c:
-                try:
-                    hosts[host] = hosts[host] + int(nicks[nick] * count / (depth ** 3) )
-                except KeyError:
-                    hosts[host] = count
-    topnicks = []
-    maxcount = 0
-    for nick, count in nicks.items():
-        if nick != inick and count > maxcount:
-            topnicks.append(nick)
-            maxcount = count
-    topnicks.reverse()
-    return topnicks
-
-def stalk(e, bot):
-    if len(e.args) == 0:
-        e.reply("usage : "+e.msg+" <nick>")
-    else:
-        db = getdb()
-        c = db.cursor()
-        nicks = _stalk(e.args[0], bot)
-        if len(nicks) == 0:
-            e.reply(e.args[0] + " is a mystery best left unsolved")
-        else:
-            e.reply(e.args[0] + " might be "+ " or ".join(nicks[:2]) + ", but who knows really?")
-b.addCommandHook("stalk", stalk, 70)
 
 def backflop(e, bot):
     e.reply(irc.action("flops around on its back"))

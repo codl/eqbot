@@ -40,6 +40,8 @@ CREATE TABLE log (
     time integer
 );
 CREATE INDEX log_dest_idx ON log(dest);
+CREATE INDEX log_type_msg_idx ON log(type,msg);
+
 
 CREATE TABLE definitions (
     source text,
