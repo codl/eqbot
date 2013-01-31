@@ -14,6 +14,7 @@ import sys
 import sqlite3
 import json
 import os
+import threading
 
 LIVE = False
 
@@ -577,14 +578,15 @@ triplets = dict()
 startingwords = list()
 tripletlock = threading.Lock()
 dumptimer = 10
+tripletlock.acquire()
 try:
-    tripletlock.aquire()
     f = open("triplets.json", "r")
     triplets, startingwords = json.load(f)
     f.close()
-    tripletlock.release()
-except OSError:
+except (OSError, ValueError):
     print("Cannot open triplets.json for reading")
+tripletlock.release()
+print("ok")
 def tripletadd(left, right):
     global dumptimer
     tripletlock.acquire()
@@ -603,6 +605,7 @@ def tripletadd(left, right):
         except OSError:
             print("Cannot open triplets.json for writing")
     tripletlock.release()
+    print("ok")
 
 def tripletget(left):
     left = left.lower()
@@ -611,6 +614,7 @@ def tripletget(left):
         return ""
     return random.choice(triplets[left])
     tripletlock.release()
+    print("ok")
 
 def store_words(e, bot):
     if e.type == irc.MSG:
