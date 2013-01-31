@@ -611,10 +611,11 @@ def tripletget(left):
     left = left.lower()
     tripletlock.acquire()
     if left not in triplets:
-        return ""
-    return random.choice(triplets[left])
+        ret = ""
+    ret = random.choice(triplets[left])
     tripletlock.release()
     print("ok")
+    return ret
 
 def store_words(e, bot):
     if e.type == irc.MSG:
