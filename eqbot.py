@@ -575,15 +575,19 @@ b.addCommandHook("rand", rand_track, 90)
 
 triplets = dict()
 startingwords = list()
+tripletlock = threading.Lock()
 dumptimer = 10
 try:
+    tripletlock.aquire()
     f = open("triplets.json", "r")
     triplets, startingwords = json.load(f)
     f.close()
+    tripletlock.release()
 except OSError:
     print("Cannot open triplets.json for reading")
 def tripletadd(left, right):
     global dumptimer
+    tripletlock.acquire()
     left = left.lower()
     if left in triplets:
         triplets[left].append(right);
@@ -591,19 +595,22 @@ def tripletadd(left, right):
         triplets[left]= [right];
     dumptimer -= 1
     if dumptimer == 0:
-        dumptimer = 50
+        dumptimer = 100
         try:
             f = open("triplets.json", "w")
             json.dump([triplets, startingwords], f)
             f.close()
         except OSError:
             print("Cannot open triplets.json for writing")
+    tripletlock.release()
 
 def tripletget(left):
     left = left.lower()
+    tripletlock.acquire()
     if left not in triplets:
         return ""
     return random.choice(triplets[left])
+    tripletlock.release()
 
 def store_words(e, bot):
     if e.type == irc.MSG:
@@ -621,7 +628,7 @@ b.addWildHook(store_words, 0)
 
 def poemm(e, bot):
     words = e.msg.split()[1:]
-    if len(words) == 0:
+    if len(words) < 2:
         words.append(random.choice(startingwords))
     while len(words) == 0 or words[-1] != "":
         words.append(tripletget(" ".join(words[-2:])))
