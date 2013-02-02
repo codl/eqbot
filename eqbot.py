@@ -586,7 +586,6 @@ try:
 except (OSError, ValueError):
     print("Cannot open triplets.json for reading")
 tripletlock.release()
-print("ok")
 
 def tripletadd(left, right):
     global dumptimer
@@ -607,16 +606,15 @@ def tripletadd(left, right):
         except OSError:
             print("Cannot open triplets.json for writing")
     tripletlock.release()
-    print("ok")
 
 def tripletget(left):
     left = left.lower()
     tripletlock.acquire()
-    if left not in triplets:
+    try:
+        ret = random.choice(triplets[left])
+    except KeyError:
         ret = ""
-    ret = random.choice(triplets[left])
     tripletlock.release()
-    print("ok")
     return ret
 
 def store_words(e, bot):
