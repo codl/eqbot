@@ -34,8 +34,10 @@ b.ignore = ["DIVINE_JUDGEMENT", "Seraphim"]
 
 b.userlevel = {}
 b.acc = {}
-b.ops = ["codl", "fmang", "Kipje", "sci", "Valodim"]
-OP = 1
+b.ops = ["codl"]
+b.hops = ["fmang", "Kipje", "sci", "Valodim"]
+HOP = 1
+OP = 2
 def fetchacc(user, bot = b):
     bot.sendMsg("NickServ", "acc " + user.partition("!")[0] + " *")
     for e in bot.eventLoop():
@@ -44,10 +46,12 @@ def fetchacc(user, bot = b):
             if args[0] == user.partition("!")[0] and args[3] == "ACC":
                 _, _, account, _, level = args[:5]
                 bot.acc[user] = account
-                if int(level) == 3 and account in bot.ops:
+                bot.userlevel[user] = 0
+                if int(level) == 3:
+                    if account in bot.ops:
                         bot.userlevel[user] = OP
-                else:
-                    bot.userlevel[user] = 0
+                    if account in bot.hops:
+                        bot.userlevel[user] = HOP
                 break
 def acc(user, bot = b):
     try:
@@ -99,10 +103,10 @@ def say(e, bot):
     words = e.msg.split()
     if len(words) < 3:
         bot.reply(e, "Usage : !say #channel message")
-        if auth(e.source) == OP:
+        if auth(e.source) >= HOP:
             bot.reply(e, "        !say nick message")
         return
-    if auth(e.source) == OP or e.args[0][0] in "#&":
+    if auth(e.source) >= HOP or e.args[0][0] in "#&":
         if words[1].lower() == "chanserv" and words[2].lower() == "kick" and words[3].lower() == "#eqbeats":
             e.reply("Do it yourself.")
         else:
@@ -113,15 +117,15 @@ def do(e, bot):
     words = e.msg.split()
     if len(words) < 3:
         bot.reply(e, "Usage : !do #channel action")
-        if auth(e.source) == OP:
+        if auth(e.source) >= HOP:
             bot.reply(e, "        !do nick action")
         return
-    if auth(e.source) == OP or e.args[0][0] in "#&":
+    if auth(e.source) >= HOP or e.args[0][0] in "#&":
         bot.sendMsg(words[1], irc.action(" ".join(words[2:])))
 b.addCommandHook("do", do, 100)
 
 def nick(e, bot):
-    if auth(e.source) == OP:
+    if auth(e.source) >= HOP:
         words = e.msg.split()
         if len(words) < 2:
             bot.reply(e, "Usage : !nick newnick")
@@ -130,7 +134,7 @@ def nick(e, bot):
 b.addCommandHook("nick", nick, 0)
 
 def join(e, bot):
-    if auth(e.source) == OP:
+    if auth(e.source) >= HOP:
         words = e.msg.split()
         if len(words) < 2:
             bot.reply(e, "Usage : !join #channel [loudness]")
@@ -141,7 +145,7 @@ def join(e, bot):
 b.addCommandHook("join", join, 0)
 
 def part(e, bot):
-    if auth(e.source) == OP:
+    if auth(e.source) >= HOP:
         words = e.msg.split()
         if len(words) < 2:
             bot.reply(e, "Usage : !part #channel")
@@ -150,7 +154,7 @@ def part(e, bot):
 b.addCommandHook("part", part, 0)
 
 def channels(e, bot):
-    if auth(e.source) == OP:
+    if auth(e.source) >= HOP:
         for channel in bot.channels:
             bot.reply(e, str(channel))
 b.addCommandHook("channels", channels, 0)
@@ -617,18 +621,18 @@ def tripletget(left):
     tripletlock.release()
     return ret
 
+def _store_words(line):
+    words = line.split()
+    for i in range(2, len(words)):
+        tripletadd(words[i-2] + " " + words[i-1], words[i])
+    if len(words) > 1:
+        tripletadd(words[0], words[1])
+        tripletadd(words[-2] + " " + words[-1], "")
+        startingwords.append(words[0])
+
 def store_words(e, bot):
     if e.type == irc.MSG:
-        db = getdb()
-        c = db.cursor()
-        words = e.msg.split()
-        for i in range(2, len(words)):
-            tripletadd(words[i-2] + " " + words[i-1], words[i])
-        if len(words) > 1:
-            tripletadd(words[0], words[1])
-            tripletadd(words[-2] + " " + words[-1], "")
-            startingwords.append(words[0])
-        db.commit()
+        _store_words(e.msg);
 b.addWildHook(store_words, 0)
 
 def poemm(e, bot):
@@ -642,6 +646,18 @@ def poemm(e, bot):
     bot.reply(e, msg)
 b.addCommandHook("chain", poemm)
 b.addCommandHook("poem", poemm)
+
+def feed(e, bot):
+    if auth(e.source) == OP:
+        if len(e.args) != 1:
+            e.reply("Syntax: !feed url")
+            return
+        page = open(args[0], "r")
+        line = page.readline(1000)
+        while(line):
+            _store_words(line)
+            line = page.readline(1000)
+b.addCommandHook("feed", feed, 0)
 
 def dundundun(e, bot):
     bot.reply(e, "DUN DUN DUUUN")
@@ -773,7 +789,7 @@ def techsupport(e, bot):
 b.addCommandHook("techsupport", techsupport)
 
 def feature(e, bot):
-    if auth(e.source) == OP:
+    if auth(e.source) >= HOP:
         tids = e.msg.split()[1:]
         if len(tids) == 0 and bot.lastTid:
             tids = (bot.lastTid,)
@@ -789,11 +805,6 @@ b.addCommandHook("fqueue", feature, 0)
 def fetchTid(e, bot):
     bot.lastTid = e.groups[0]
 b.addRegexHook("https?://(?:www\\.)?eqbeats\\.org/track/([0-9]+)", fetchTid)
-
-def debug_tid(e, bot):
-    if auth(e.source) == OP:
-        e.reply(repr(bot.lastTid))
-b.addCommandHook("tid", debug_tid, 0)
 
 def inc(var):
     db = getdb()
