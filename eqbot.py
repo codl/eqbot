@@ -587,12 +587,14 @@ except (OSError, ValueError):
     print("Cannot open triplets.json for reading")
 tripletlock.release()
 print("ok")
+
 def tripletadd(left, right):
     global dumptimer
     tripletlock.acquire()
     left = left.lower()
     if left in triplets:
-        triplets[left].append(right);
+        if right != "" or "" not in triplets[left]:
+            triplets[left].append(right);
     else:
         triplets[left]= [right];
     dumptimer -= 1
