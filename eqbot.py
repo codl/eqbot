@@ -652,7 +652,7 @@ def feed(e, bot):
         if len(e.args) != 1:
             e.reply("Syntax: !feed url")
             return
-        page = open(args[0], "r")
+        page = open(e.args[0], "r")
         line = page.readline(1000)
         while(line):
             _store_words(line)
