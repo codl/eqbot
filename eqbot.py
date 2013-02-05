@@ -167,7 +167,6 @@ def fetchTitle(url):
     if enc == "": enc = "utf-8"
     try:
         return " ".join(HTMLParser.unescape(HTMLParser, re.search(b"<title>(.*?)</title>", page.read(10000).translate(None,b"\n\r\t"), flags = re.I | re.M).expand(b"\\1").decode("utf-8")).split())
-        #return HTMLParser.unescape(HTMLParser, re.search("<title>(.*)</title>", page.read().decode(enc), re.I).expand("\\1"))
     except (AttributeError, HTTPError, URLError):
         return None
 
@@ -637,7 +636,7 @@ b.addWildHook(store_words, 0)
 
 def poemm(e, bot):
     words = e.msg.split()[1:]
-    if len(words) < 2:
+    if len(words) < 1:
         words.append(random.choice(startingwords))
     while len(words) == 0 or words[-1] != "":
         words.append(tripletget(" ".join(words[-2:])))
@@ -850,10 +849,6 @@ def getvalue(e, bot):
             val = str(row[1])
         else:
             val = "0"
-        #if var.lower() in ("python", "rarity"):
-        #    val = str(random.randint(1, 99999))
-        #elif var.lower() in ("twilight", "twilightsparkle", "twilight_sparkle"):
-        #    val = "∞"
         msg = "Karma for "+var+" : "+val
         bot.reply(e, msg)
 b.addRegexHook("[^ \\t]==", getvalue, 90)
