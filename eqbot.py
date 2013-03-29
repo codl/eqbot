@@ -547,6 +547,14 @@ def substitute(e, bot):
         else: source = e.sourceNick
         args = e.msg.split(e.msg[1])
         if len(args) >= 3:
+            flags = re.I
+            count = 1
+            if len(args) >= 4:
+                if "I" in args[3]:
+                    flags ^= re.I
+                if "g" in args[3]:
+                    count = 0
+
             bufferlock.acquire()
             if source in buffer:
                 for e_ in buffer[source]:
@@ -558,8 +566,8 @@ def substitute(e, bot):
                             text = "<%s> %s" % (e_.nick, e_.msg)
                     elif e_.type == irc.ACTION:
                         text = "* %s %s" % (e_.nick, e_.msg)
-                    if text and re.search(args[1], text, flags=re.I):
-                        e.reply(re.sub(args[1], args[2], text, flags=re.I))
+                    if text and re.search(args[1], text, flags=flags):
+                        e.reply(re.sub(args[1], args[2], text, flags=flags, count=count))
                         bufferlock.release()
                         return
             bufferlock.release()
