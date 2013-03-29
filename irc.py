@@ -2,6 +2,7 @@
 
 import time
 import socket
+import json
 
 # LET'S GET SOME CONSTANTS UP IN HERE
 # status constants
@@ -46,6 +47,7 @@ class CantConnectError(Error):
 class CantConnectError(Error):
     def __repr__(self): return "<IRC IncorrectNick Error>"
 
+
 class Event:
     def __repr__(self):
         return "<IRC event from " + self.source + ">"
@@ -61,6 +63,27 @@ class Event:
         self.dest = dest if dest else channel if channel else irc.nick if irc else None
         self.irc = irc
         self.time = float(etime) if etime else time.time()
+
+    @staticmethod
+    def from_dict(d):
+        if "__event__" in d:
+            return Event(d["type"], d["source"], d["dest"], d["msg"], d["time"])
+        else:
+            return d
+
+class EventEncoder(json.JSONEncoder):
+    def default(self, e):
+        if isinstance(e, Event):
+            return {
+                    "__event__": True,
+                    "type": e.type,
+                    "source": e.source,
+                    "dest": e.dest,
+                    "msg": e.msg,
+                    "time": e.time
+                    }
+        else:
+            return json.JSONEncoder.default(self, obj)
 
 class Irc:
     def __repr__(self):

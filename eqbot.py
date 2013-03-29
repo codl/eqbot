@@ -540,49 +540,38 @@ def mailbag(e, bot):
 b.addCommandHook("mailbag", mailbag, 90)
 b.addCommandHook("mailbox", mailbag, 90)
 
-def s(e, bot):
+def substitute(e, bot):
     global buffer
     if e.type == irc.MSG:
         if e.channel: source = e.channel
         else: source = e.sourceNick
         args = e.msg.split(e.msg[1])
         if len(args) >= 3:
-            if source not in buffer:
-                return
-            for e_ in buffer[source]:
-                text = None
-                if e_.type == irc.PRIVMSG and not re.match("s(?P<delim>[^ \tA-Za-z0-9]).*(?P=delim)", e_.msg):
-                    if e_.nick == e.irc.nick and re.match("<.*>", e_.msg):
-                        text = e_.msg
-                    else:
-                        text = "<%s> %s" % (e_.nick, e_.msg)
-                elif e_.type == irc.ACTION:
-                    text = "* %s %s" % (e_.nick, e_.msg)
-                if text and re.search(args[1], text, flags=re.I):
-                    e.reply(re.sub(args[1], args[2], text, flags=re.I))
-                    return
-b.addRegexHook("^s(?P<delim>[^ \tA-Za-z0-9]).*(?P=delim)", s, 70)
+            bufferlock.acquire()
+            if source in buffer:
+                for e_ in buffer[source]:
+                    text = None
+                    if e_.type == irc.PRIVMSG and not re.match("s(?P<delim>[^ \tA-Za-z0-9]).*(?P=delim)", e_.msg):
+                        if e_.nick == e.irc.nick and re.match("<.*>", e_.msg):
+                            text = e_.msg
+                        else:
+                            text = "<%s> %s" % (e_.nick, e_.msg)
+                    elif e_.type == irc.ACTION:
+                        text = "* %s %s" % (e_.nick, e_.msg)
+                    if text and re.search(args[1], text, flags=re.I):
+                        e.reply(re.sub(args[1], args[2], text, flags=re.I))
+                        bufferlock.release()
+                        return
+            bufferlock.release()
+
+b.addRegexHook("^s(?P<delim>[^ \tA-Za-z0-9]).*(?P=delim)", substitute, 70)
 
 def rand_track(e, bot):
     bot.reply(e, eqbeats.ppTrack(eqbeats.random()))
 b.addCommandHook("random", rand_track, 90)
 b.addCommandHook("rand", rand_track, 90)
 
-triplets = dict()
-startingwords = list()
-tripletlock = threading.Lock()
-dumptimer = 10
-tripletlock.acquire()
-try:
-    f = open("triplets.json", "r")
-    triplets, startingwords = json.load(f)
-    f.close()
-except (OSError, ValueError):
-    print("Cannot open triplets.json for reading")
-tripletlock.release()
-
 def tripletadd(left, right):
-    global dumptimer
     tripletlock.acquire()
     left = left.lower()
     if left in triplets:
@@ -590,15 +579,6 @@ def tripletadd(left, right):
             triplets[left].append(right);
     else:
         triplets[left]= [right];
-    dumptimer -= 1
-    if dumptimer == 0:
-        dumptimer = 100
-        try:
-            f = open("triplets.json", "w")
-            json.dump([triplets, startingwords], f)
-            f.close()
-        except OSError:
-            print("Cannot open triplets.json for writing")
     tripletlock.release()
 
 def tripletget(left):
@@ -858,21 +838,25 @@ def backflop(e, bot):
     e.reply(irc.action("flops around on its back"))
 b.addCommandHook("backflop", backflop, 70)
 
-buffer = {}
-lastseen = {}
 def log(e, bot):
     global buffer
     if e.type in (irc.MSG, irc.ACTION):
         buf = e.channel if e.channel else e.source
+        bufferlock.acquire()
         if buf not in buffer:
             buffer[buf] = []
-        buffer[buf].insert(1, e)
+        buffer[buf].insert(0, e)
         if len(buffer[buf]) > 500:
             buffer[buf] = buffer[buf][:500]
+        bufferlock.release()
 
     global lastseen
     if e.nick:
+        seenlock.acquire()
         lastseen[e.nick.lower()] = e
+        if e.type == irc.NICK:
+            lastseen[e.msg.lower()] = e
+        seenlock.release()
 
 b.addWildHook(log, 30)
 b.addOutmsgHook(log, 30)
@@ -952,7 +936,7 @@ def seen(e, bot):
         return
     if nick.lower() in lastseen:
         e_ = lastseen[nick.lower()]
-        msg = e_.nick + " was last seen " + relativetime(time.time() - e_.time) + " ago, "
+        msg = nick + " was last seen " + relativetime(time.time() - e_.time) + " ago, "
         if e_.type == irc.QUIT:
             msg += "quitting irc with message \"%s\"" % (e_.msg,)
         elif e_.type == irc.JOIN:
@@ -1003,7 +987,7 @@ def fun_(e, bot):
     if funcount < 5:
         e.reply("Fun!")
         funcount += 1
-b.addRegexHook("^fun[! ]*$", fun_, 70)
+b.addRegexHook("^fun[!? ]*$", fun_, 70)
 
 def funreset(bot):
     global funcount
@@ -1011,6 +995,56 @@ def funreset(bot):
         funcount -= 1
     return 20
 b.addTimeHook(20, funreset)
+
+def save(bot):
+    seenlock.acquire()
+    try:
+        f = open("seen.json", "w")
+        json.dump(lastseen, f, indent=4, cls=irc.EventEncoder)
+        f.close()
+    except OSError:
+        print("Cannot open seen.json for writing")
+    seenlock.release()
+
+    tripletlock.acquire()
+    try:
+        f = open("triplets.json", "w")
+        json.dump([triplets, startingwords], f, indent=4)
+        f.close()
+    except OSError:
+        print("Cannot open triplets.json for writing")
+    tripletlock.release()
+
+    return 120
+b.addTimeHook(20, save)
+
+
+triplets = dict()
+startingwords = list()
+tripletlock = threading.Lock()
+tripletlock.acquire()
+try:
+    f = open("triplets.json", "r")
+    triplets, startingwords = json.load(f)
+    f.close()
+except (OSError, ValueError):
+    print("Cannot open triplets.json for reading")
+tripletlock.release()
+
+buffer = {}
+bufferlock = threading.Lock()
+
+lastseen = {}
+seenlock = threading.Lock()
+seenlock.acquire()
+try:
+    f = open("seen.json", "r")
+    lastseen = json.load(f, object_hook=irc.Event.from_dict)
+    f.close()
+except (OSError, ValueError):
+    print("Cannot open seen.json for reading")
+    lastseen = {}
+seenlock.release()
 
 i.recv()
 i.recv()
