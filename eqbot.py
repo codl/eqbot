@@ -512,8 +512,8 @@ def deliverMail(e, bot):
         else:
             bot.reply(e, msg)
     db.commit()
-b.addMsgHook(deliverMail, 90)
-b.addJoinHook(deliverMail, 90)
+b.addMsgHook(deliverMail, 70)
+b.addJoinHook(deliverMail, 70)
 
 def mail(e, bot):
     db = getdb()
