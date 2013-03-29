@@ -31,6 +31,11 @@ def search(q):
     tracks = json.loads(page.read().decode("UTF-8"))
     return tracks
 
+def featured(q):
+    page = ur.urlopen("https://eqbeats.org/tracks/featured/json")
+    tracks = json.loads(page.read().decode("UTF-8"))
+    return tracks[0]
+
 def track(id):
     try:
         page = ur.urlopen("https://eqbeats.org/track/%s/json" % (id,))
