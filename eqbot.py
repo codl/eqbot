@@ -541,17 +541,16 @@ b.addCommandHook("mailbag", mailbag, 90)
 b.addCommandHook("mailbox", mailbag, 90)
 
 def s(e, bot):
-    db = getdb()
-    c = db.cursor()
+    global buffer
     if e.type == irc.MSG:
         if e.channel: source = e.channel
         else: source = e.sourceNick
         args = e.msg.split(e.msg[1])
         if len(args) >= 3:
-            c.execute("SELECT type, source, dest, msg, time FROM log WHERE dest LIKE ? AND time < ? ORDER BY time DESC LIMIT 100", (source, e.time))
-            for row in c:
+            if source not in buffer:
+                return
+            for e_ in buffer[source]:
                 text = None
-                e_ = irc.Event(*row)
                 if e_.type == irc.PRIVMSG and not re.match("s(?P<delim>[^ \tA-Za-z0-9]).*(?P=delim)", e_.msg):
                     if e_.nick == e.irc.nick and re.match("<.*>", e_.msg):
                         text = e_.msg
@@ -855,66 +854,25 @@ def getvalue(e, bot):
         bot.reply(e, msg)
 b.addRegexHook("[^ \\t]==", getvalue, 90)
 
-def sadtrombone(e, bot):
-    bot.reply(e, "http://www.sadtrombone.com/")
-b.addCommandHook("sadtrombone", sadtrombone, 70)
-
 def backflop(e, bot):
     e.reply(irc.action("flops around on its back"))
 b.addCommandHook("backflop", backflop, 70)
 
+buffer = {}
+lastseen = {}
 def log(e, bot):
-    db = getdb()
-    c = db.cursor()
-    if e.channel and e.type in (irc.MSG, irc.JOIN, irc.ACTION, irc.TOPIC):
-        if not hasattr(bot.channel(e.channel), "nicks"):
-            bot.channel(e.channel).nicks = []
-        if not e.nick in bot.channel(e.channel).nicks:
-            bot.channel(e.channel).nicks.append(e.nick)
-    if e.type == irc.PART:
-        try:
-            bot.channel(e.channel).nicks.remove(e.nick)
-        except (ValueError, AttributeError):
-            pass
-    if e.type in (irc.MSG, irc.JOIN, irc.PART, irc.KICK, irc.ACTION, irc.TOPIC):
-        c.execute("INSERT INTO log (type, source, dest, time, msg) "+
-                "VALUES (?,?,?,?,?)", (e.type, e.source, e.dest, e.time, e.msg))
-        db.commit()
-    elif e.type in (irc.QUIT, irc.NICK):
-        for channel in bot.channels:
-            try:
-                if e.type == irc.NICK:
-                    channel.nicks.remove(e.msg);
-                    channel.nicks.append(e.nick);
-                else:
-                    channel.nicks.remove(e.nick);
-                c.execute("INSERT INTO log (type, source, dest, time, msg) "+
-                        "VALUES (?,?,?,?,?)", (e.type, e.source, channel.name, e.time, e.msg))
-            except (ValueError, AttributeError):
-                pass
-        db.commit()
+    global buffer
+    if e.type in (irc.MSG, irc.ACTION):
+        buf = e.channel if e.channel else e.source
+    if buf not in buffer:
+        buffer[buf] = []
+    buffer[buf].insert(1, e)
+    if len(buffer[buf]) > 500:
+        buffer[buf] = buffer[buf][:500]
 
-    # plaintext is delicious
-    """ 
-    if e.type == irc.MSG:
-        days[-1][2].write("<" + e.nick + "> " + stripcolor(e.msg) + "\n")
-    elif e.type == irc.ACTION:
-        days[-1][2].write("* " + e.nick + " " + stripcolor(e.msg) + "\n")
-    elif e.type == irc.JOIN:
-        days[-1][2].write("> " + e.nick + " joined " + e.channel + "\n")
-    elif e.type == irc.PART:
-        days[-1][2].write("< " + e.nick + " left " + e.channel + "\n")
-    elif e.type == irc.QUIT:
-        days[-1][2].write("< " + e.nick + " quit IRC : " + e.msg + "\n")
-    elif e.type == irc.NICK:
-        days[-1][2].write(e.msg + " is now " + e.nick + "\n")
-    elif e.type == irc.TOPIC:
-        days[-1][2].write(e.nick + " has changed the topic to: " + e.msg + "\n")
-    elif e.type == irc.KICK:
-        days[-1][2].write(e.nick + " has changed the topic to: " + e.msg + "\n")
-    else:
-        days[-1][2].write("LOL Y FORGIT THIS MESAGE TYPE" + e.msg + "\n")
-    """
+    global lastseen
+    lastseen[e.source.lower()] = e
+
 b.addWildHook(log, 30)
 b.addOutmsgHook(log, 30)
 b.addIgnoreHook(log, 30)
@@ -932,7 +890,23 @@ def whatis(e, bot):
         e.reply(row[0]  + " " + row[1])
     else:
         verb = "are" if e.msg.split()[0][-3:] == "are" else "is"
-        e.reply(thing + " " + verb + random.choice((" YOUR MOM", " YOUR FACE", " THE REASON YOU SUCK", " NOTHING ANYONE CARES ABOUT", " FUCK YOUR !WHATIS", " ADOPTED", " GOD'S MISTAKE", " AN ABOMINATION OF THIS EARTH", " BAD AND YOU SHOULD FEEL BAD", " A SINGULARITY OF SELF-DEPRECIATION", " A DIRTY COMMUNIST", " CURRENTLY IN THERAPY BECAUSE OF YOU", " NOT INTERESTED, STOP CALLING", " NOT WORTH ANYONE'S TIME", " a butt fart")))
+        e.reply(thing + " " + verb + random.choice((
+            " A DIRTY COMMUNIST",
+            " A SINGULARITY OF SELF-DEPRECIATION",
+            " ADOPTED",
+            " AN ABOMINATION OF THIS EARTH",
+            " BAD AND YOU SHOULD FEEL BAD",
+            " CURRENTLY IN THERAPY BECAUSE OF YOU",
+            " FUCK YOUR !WHATIS",
+            " GOD'S MISTAKE",
+            " NOT INTERESTED, STOP CALLING",
+            " NOT WORTH ANYONE'S TIME",
+            " NOTHING ANYONE CARES ABOUT",
+            " THE REASON YOU SUCK",
+            " YOUR FACE",
+            " YOUR MOM",
+            " a butt fart"
+        )))
 b.addCommandHook("whatis", whatis, 70)
 b.addCommandHook("whois", whatis, 70)
 b.addCommandHook("whatare", whatis, 70)
@@ -964,11 +938,10 @@ def relativetime(lapse):
 
 
 def seen(e, bot):
+    global lastseen
     if len(e.args) != 1:
         e.reply("Usage : !seen <nick>")
         return
-    db = getdb()
-    c = db.cursor()
     nick = e.args[0]
     if nick.lower() == e.nick.lower():
         e.reply(nick + " was last seen right here, right now, asking dumb questions.")
@@ -976,11 +949,9 @@ def seen(e, bot):
     elif nick.lower() == e.irc.nick.lower():
         e.reply("I'm right here, hello.")
         return
-    c.execute("SELECT type, source, dest, msg, time FROM log WHERE source LIKE ? OR (msg LIKE ? AND type == ?) ORDER BY time DESC LIMIT 1", (nick + "!%", nick, irc.NICK))
-    row = c.fetchone()
-    if row:
-        e_ = irc.Event(*row)
-        msg = nick + " was last seen " + relativetime(time.time() - e_.time) + " ago, "
+    if nick.lower() in lastseen:
+        e_ = lastseen[nick.lower()]
+        msg = e_.nick + " was last seen " + relativetime(time.time() - e_.time) + " ago, "
         if e_.type == irc.QUIT:
             msg += "quitting irc with message \"%s\"" % (e_.msg,)
         elif e_.type == irc.JOIN:
