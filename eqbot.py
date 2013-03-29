@@ -474,18 +474,17 @@ def backflip(e, bot):
         bot.bfcounter = 0
 b.addCommandHook("backflip", backflip, 30)
 
-def rfchelp(e, bot):
-    bot.reply(e, "Syntax : rfc?ID")
-b.addCommandHook("rfc", rfchelp, 30)
-
 def rfc(e, bot):
-    url = "https://tools.ietf.org/html/rfc" + e.groups[0]
+    if len(e.args != 1):
+        e.reply("Usage: !rfc <ID>")
+        return
+    url = "https://tools.ietf.org/html/rfc" + e.args[0]
     title = fetchTitle(url)
     if not title:
         bot.reply(e, "No such RFC standard.")
         return
     bot.reply(e, title + " " + url)
-b.addRegexHook("rfc\?([0-9]+)", rfc, 30)
+b.addCommandHook("rfc", rfc, 30)
 
 def url(e, bot):
     title = fetchTitle(e.groups[0])
