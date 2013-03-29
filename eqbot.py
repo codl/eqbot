@@ -67,19 +67,13 @@ def auth(user, bot = b):
         fetchacc(user, bot)
         return bot.userlevel[user]
 
-def preauth(e, bot):
-    fetchacc(e.source)
-b.addJoinHook(preauth, 0)
-
-def reauth(e, bot):
+def nick_clearauth(e, bot):
     try:
         del bot.userlevel[e.msg + "!" + e.source.partition("!")[2]]
         del bot.acc[e.msg + "!" + e.source.partition("!")[2]]
     except KeyError:
         pass
-    time.sleep(0.5) # NickServ lags a bit
-    fetchacc(e.source)
-b.addNickHook(reauth)
+b.addNickHook(nick_clearauth)
 
 def clearauth(e, bot):
     try:
