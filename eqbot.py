@@ -864,14 +864,15 @@ def log(e, bot):
     global buffer
     if e.type in (irc.MSG, irc.ACTION):
         buf = e.channel if e.channel else e.source
-    if buf not in buffer:
-        buffer[buf] = []
-    buffer[buf].insert(1, e)
-    if len(buffer[buf]) > 500:
-        buffer[buf] = buffer[buf][:500]
+        if buf not in buffer:
+            buffer[buf] = []
+        buffer[buf].insert(1, e)
+        if len(buffer[buf]) > 500:
+            buffer[buf] = buffer[buf][:500]
 
     global lastseen
-    lastseen[e.source.lower()] = e
+    if e.nick:
+        lastseen[e.nick.lower()] = e
 
 b.addWildHook(log, 30)
 b.addOutmsgHook(log, 30)
