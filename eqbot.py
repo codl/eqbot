@@ -191,6 +191,20 @@ def plot(e, bot):
     if swapped: bot.reply(e, "<" + e.sourceNick + "> " + " ".join(words))
 b.addRegexHook("plot", plot, 90)
 
+def lightsaber(e, bot):
+    words = e.msg.split(" ")
+    swapped = False
+    for i in range(len(words)): # how unpythonic D:
+        if words[i] == ("vibrator", "dildo"):
+            words[i] = "lightsaber"
+            swapped = True
+        elif words[i] in ("VIBRATOR", "DILDO"):
+            words[i] = "LIGHTSABER"
+            swapped = True
+    if swapped: bot.reply(e, "<" + e.sourceNick + "> " + " ".join(words))
+b.addRegexHook("dildo", lightsaber, 90)
+b.addRegexHook("vibrator", lightsaber, 90)
+
 def _search(e, bot, q):
     try:
         id = int(q)
