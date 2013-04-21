@@ -1035,8 +1035,6 @@ def save(bot):
         print("Cannot open triplets.pickle for writing")
     tripletlock.release()
 
-    print("Done!")
-
     return 300
 b.addTimeHook(20, save)
 
