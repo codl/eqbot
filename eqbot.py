@@ -15,6 +15,7 @@ import sqlite3
 import json
 import os
 import threading
+import pickle
 
 LIVE = False
 
@@ -1020,23 +1021,23 @@ b.addTimeHook(20, funreset)
 def save(bot):
     seenlock.acquire()
     try:
-        f = open("seen.json", "w")
-        json.dump(lastseen, f, indent=4, cls=irc.EventEncoder)
-        f.close()
+        with open("seen.json", "w") as f:
+            json.dump(lastseen, f, indent=4, cls=irc.EventEncoder)
     except OSError:
         print("Cannot open seen.json for writing")
     seenlock.release()
 
     tripletlock.acquire()
     try:
-        f = open("triplets.json", "w")
-        json.dump([triplets, startingwords], f, indent=4)
-        f.close()
+        with open("triplets.pickle", "wb") as f:
+            pickle.dump([triplets, startingwords], f)
     except OSError:
-        print("Cannot open triplets.json for writing")
+        print("Cannot open triplets.pickle for writing")
     tripletlock.release()
 
-    return 120
+    print("Done!")
+
+    return 300
 b.addTimeHook(20, save)
 
 
@@ -1045,9 +1046,8 @@ startingwords = list()
 tripletlock = threading.Lock()
 tripletlock.acquire()
 try:
-    f = open("triplets.json", "r")
-    triplets, startingwords = json.load(f)
-    f.close()
+    with open("triplets.pickle", "rb") as f:
+        triplets, startingwords = pickle.load(f)
 except (OSError, ValueError):
     print("Cannot open triplets.json for reading")
 tripletlock.release()
