@@ -199,8 +199,14 @@ def lightsaber(e, bot):
         if words[i] in ("VIBRATOR", "DILDO"):
             words[i] = "LIGHTSABER"
             swapped = True
+        elif words[i] in ("VIBRATORS", "DILDOS"):
+            words[i] = "LIGHTSABERS"
+            swapped = True
         elif words[i].lower() in ("vibrator", "dildo"):
             words[i] = "lightsaber"
+            swapped = True
+        elif words[i].lower() in ("vibrators", "dildos"):
+            words[i] = "lightsabers"
             swapped = True
     if swapped: bot.reply(e, "<" + e.sourceNick + "> " + " ".join(words))
 b.addRegexHook("dildo|vibrator", lightsaber, 70)
