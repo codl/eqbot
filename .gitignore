@@ -1,0 +1,4 @@
+*.pyc
+db
+seen.json
+triplets.pickle
