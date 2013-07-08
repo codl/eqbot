@@ -188,14 +188,16 @@ class Bot:
                         threading.Thread(target=hook[1].func, args=(e_, self)).start()
             if not e.channel:
                 try:
+                    e.command = e.msg.split()[0].lower().lstrip(self.prefix)
                     e.args = e.msg.split()[1:]
-                    threading.Thread(target=self.commandHooks[e.msg.lower().lstrip(self.prefix).split(" ")[0]].func, args=(e, self)).start()
+                    threading.Thread(target=self.commandHooks[e.command].func, args=(e, self)).start()
                 except KeyError:
                     pass
             elif e.msg[0] == self.prefix:
                 try:
+                    e.command = e.msg.split()[0][1:].lower()
                     e.args = e.msg.split()[1:]
-                    hook = self.commandHooks[e.msg.split()[0][1:].lower()]
+                    hook = self.commandHooks[e.command]
                     if self.level(e.channel) >= hook.level:
                         threading.Thread(target=hook.func, args=(e, self)).start()
                 except KeyError:
