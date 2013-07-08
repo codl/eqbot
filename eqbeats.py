@@ -3,8 +3,9 @@ import urllib.request as ur
 import urllib.parse as up
 from urllib.error import HTTPError, URLError
 
-def ppTrack(t):
-    return t['title'] + " by " + t['artist']['name'] + " https://eqbeats.org/track/" + str(t['id']) + ""
+def ppTrack(t, url=True):
+    return t['title'] + " by " + t['artist']['name'] +\
+        ((" https://eqbeats.org/track/" + str(t['id']) + "") if url else "")
 
 seenTracks = []
 def newTracks():

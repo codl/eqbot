@@ -796,9 +796,22 @@ def techsupport(e, bot):
         )) % (technoverb(), technothing()))
 b.addCommandHook("techsupport", techsupport)
 
+def ffeature(e, bot):
+    if auth(e.source) >= HOP:
+        tids = e.args
+        if len(tids) == 0 and bot.lastTid:
+            tids = (bot.lastTid,)
+        with open("/srv/eqbeats/tools/fqueue", "a") as f:
+            for tid in tids:
+                t = eqbeats.track(tid)
+                if(t):
+                    f.write("%d %s - %s\n" % (t['id'], t['artist']['name'], t['title']))
+                    e.reply("queued %s forcefully\n" % (eqbeats.ppTrack(t)))
+b.addCommandHook("ffeature", ffeature, 0)
+
 def feature(e, bot):
     if auth(e.source) >= HOP:
-        tids = e.msg.split()[1:]
+        tids = e.args
         if len(tids) == 0 and bot.lastTid:
             tids = (bot.lastTid,)
         for tid in tids:
@@ -806,9 +819,8 @@ def feature(e, bot):
                 int(tid)
                 bot.reply(e, os.popen("sudo -u eqbeats-pub EQBEATS_DIR=/srv/eqbeats/ /srv/eqbeats/tools/fqueue " + tid + " 2>&1").read())
             except (TypeError, ValueError):
-                break
+                continue
 b.addCommandHook("feature", feature, 0)
-b.addCommandHook("fqueue", feature, 0)
 
 def fetchTid(e, bot):
     bot.lastTid = e.groups[0]
