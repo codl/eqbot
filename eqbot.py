@@ -801,7 +801,7 @@ def ffeature(e, bot):
         tids = e.args
         if len(tids) == 0 and bot.lastTid:
             tids = (bot.lastTid,)
-        with open("/srv/eqbeats/tools/fqueue", "a") as f:
+        with open("/srv/eqbeats/feature.queue", "a") as f:
             for tid in tids:
                 t = eqbeats.track(tid)
                 if(t):
