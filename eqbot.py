@@ -346,7 +346,7 @@ def roll(e, bot):
                     e.reply("Rolling a few handfuls of dice: Total: a few millions, maybe more")
                     return
             bot.reply(e, msg)
-            msg = "        "
+            msg = "        " # for alignment
         except LookupError:
             pass
     if totaldice > 1:
