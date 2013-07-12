@@ -576,20 +576,22 @@ def substitute(e, bot):
                     count = 0
 
             bufferlock.acquire()
-            if source in buffer:
-                for e_ in buffer[source]:
-                    text = None
-                    if e_.type == irc.PRIVMSG and not re.match("s(?P<delim>[^ \tA-Za-z0-9]).*(?P=delim)", e_.msg):
-                        if e_.nick == e.irc.nick and re.match("<.*>", e_.msg):
-                            text = e_.msg
-                        else:
-                            text = "<%s> %s" % (e_.nick, e_.msg)
-                    elif e_.type == irc.ACTION:
-                        text = "* %s %s" % (e_.nick, e_.msg)
-                    if text and re.search(args[1], text, flags=flags):
-                        e.reply(re.sub(args[1], args[2], text, flags=flags, count=count))
-                        bufferlock.release()
-                        return
+            try:
+                if source in buffer:
+                    for e_ in buffer[source]:
+                        text = None
+                        if e_.type == irc.PRIVMSG and not re.match("s(?P<delim>[^ \tA-Za-z0-9]).*(?P=delim)", e_.msg):
+                            if e_.nick == e.irc.nick and re.match("<.*>", e_.msg):
+                                text = e_.msg
+                            else:
+                                text = "<%s> %s" % (e_.nick, e_.msg)
+                        elif e_.type == irc.ACTION:
+                            text = "* %s %s" % (e_.nick, e_.msg)
+                        if text and re.search(args[1], text, flags=flags):
+                            e.reply(re.sub(args[1], args[2], text, flags=flags, count=count))
+                            break
+            except (re.error):
+                pass
             bufferlock.release()
 
 b.addRegexHook("^s(?P<delim>[^ \tA-Za-z0-9]).*(?P=delim)", substitute, 70)
