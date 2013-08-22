@@ -803,7 +803,7 @@ def ffeature(e, bot):
         tids = e.args
         if len(tids) == 0 and bot.lastTid:
             tids = (bot.lastTid,)
-        with open("/srv/eqbeats/feature.queue", "a") as f:
+        with open("/var/spool/eqbeats/feature.queue", "a") as f:
             for tid in tids:
                 t = eqbeats.track(tid)
                 if(t):
@@ -819,7 +819,7 @@ def feature(e, bot):
         for tid in tids:
             try:
                 int(tid)
-                bot.reply(e, os.popen("sudo -u eqbeats-pub EQBEATS_DIR=/srv/eqbeats/ /srv/eqbeats/tools/fqueue " + tid + " 2>&1").read())
+                bot.reply(e, os.popen("sudo -u eqbeats-pub /opt/eqbeats/libexec/eqbeats/fqueue " + tid + " 2>&1").read())
             except (TypeError, ValueError):
                 continue
 b.addCommandHook("feature", feature, 0)
