@@ -1045,7 +1045,7 @@ b.addCommandHook('art', art_)
 lastart = 0
 def art(e, bot):
     global lastart
-    if lastart + 60*60*24 < time.time():
+    if lastart + 60*60*24 > time.time():
         return
     lastart = time.time()
     art_(e, bot)
