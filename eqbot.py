@@ -1038,6 +1038,19 @@ def funreset(bot):
     return 20
 b.addTimeHook(20, funreset)
 
+def art_(e, bot):
+    e.reply("http://f.codl.fr/1402/the_art_of_our_culture.webm")
+b.addCommandHook('art', art_)
+
+lastart = 0
+def art(e, bot):
+    global lastart
+    if lastart + 60*60*24 < time.time():
+        return
+    lastart = time.time()
+    art_(e, bot)
+b.addRegexHook('\\bart\\b', art)
+
 def save(bot):
     seenlock.acquire()
     try:
