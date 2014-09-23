@@ -1013,7 +1013,7 @@ b.addCommandHook("help", info, 90)
 
 def once(bot):
     for channel in bot.channels:
-        if channel.level >= 90:
+        if channel.level >= 95:
             bot.sendMsg(channel.name, "once")
     return random.randint(30, 172800) # 48h :D
 b.addTimeHook(random.randint(120, 172800), once)
